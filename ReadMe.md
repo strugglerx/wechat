@@ -17,7 +17,7 @@ require github.com/strugglerx/wechat
 ```golang
 appid := "xx"
 secret := "xx"
-app := wechat.New(appid,secret)
+app := miniapp.New(appid,secret)
 //To Do
 ```
 

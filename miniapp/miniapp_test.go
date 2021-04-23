@@ -1,4 +1,4 @@
-package wechat
+package miniapp
 
 import (
 	"testing"

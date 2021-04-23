@@ -1,4 +1,4 @@
-package wechatmp
+package mp
 
 import (
 	"errors"

@@ -1,4 +1,4 @@
-package wechat
+package miniapp
 
 type mapInterface map[string]interface{}
 
