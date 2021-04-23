@@ -13,6 +13,14 @@ suggested using `go.mod`:
 require github.com/strugglerx/wechat
 ```
 
+# Usage
+```golang
+appid := "xx"
+secret := "xx"
+app := wechat.New(appid,secret)
+//To Do
+```
+
 # License
 
 `Go Wechat` is licensed under the [MIT License](LICENSE), 100% free and open-source, forever.
