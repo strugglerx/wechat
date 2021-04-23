@@ -1,12 +1,5 @@
 package miniapp
 
-/**
- * @PROJECT_NAME zhmqServer
- * @author  Moqi
- * @date  2021-02-24 10:32
- * @Email:str@li.cm
- **/
-
 import (
 	"crypto/aes"
 	"crypto/cipher"

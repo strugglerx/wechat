@@ -7,15 +7,6 @@ import (
 	"time"
 )
 
-/**
- * @PROJECT_NAME zhmqServer
- * @author  Moqi
- * @date  2021-02-23 22:42
- * @Email:str@li.cm
- **/
-
-// ====== 网页授权使用 ======
-
 //获取Oauth2accessToken(网页版本) //不可以缓存，每个用户的登陆凭证不一样
 func (m *Mp) GetOauthAccessToken(code string) *OauthToken {
 	if m.Oauth2Token == nil {

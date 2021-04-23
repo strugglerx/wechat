@@ -1,12 +1,5 @@
 package mp
 
-/**
- * @PROJECT_NAME wechatmp
- * @author  Moqi
- * @date  2020-04-09 19:58
- * @Email:str@li.cm
- **/
-
 import (
 	"encoding/json"
 	"errors"
@@ -21,12 +14,6 @@ import (
 	"time"
 )
 
-
-//var H5Token_ *Token = &Token{"", 0}
-//
-//var H5Oauth2Token_ *OauthToken = &OauthToken{Token: "", UpdateTime: 0}
-
-// ====== 初始化实例 ======
 
 type Mp struct {
 	Appid string

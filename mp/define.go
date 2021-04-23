@@ -5,15 +5,6 @@ import (
 	"github.com/strugglerx/wechat/tool"
 )
 
-/**
- * @PROJECT_NAME wechatmp
- * @author  Moqi
- * @date  2020-04-09 20:10
- * @Email:str@li.cm
- **/
-
-// ====== 域名等固定参数 ======
-
 
 //tickerDomain
 const tickerDomain tool.Domain = "https://mp.weixin.qq.com"
@@ -21,7 +12,6 @@ const tickerDomain tool.Domain = "https://mp.weixin.qq.com"
 // 解析query
 type param map[string]string
 
-// ====== 结构体 ======
 
 type User struct {
 	Session string `json:"session,omitempty"`

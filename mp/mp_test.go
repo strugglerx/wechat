@@ -2,13 +2,6 @@ package mp
 
 import "testing"
 
-/**
- * @PROJECT_NAME wechatmp
- * @author  Moqi
- * @date  2020-04-09 20:14
- * @Email:str@li.cm
- **/
-
 func TestGetAccessToken(t *testing.T) {
 	mp := &Mp{
 		Appid:"wxac5621df42a3bc11",
