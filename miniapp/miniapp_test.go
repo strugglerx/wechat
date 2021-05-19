@@ -13,6 +13,14 @@ func TestWxSession(t *testing.T) {
 	}
 }
 
+func TestApp_CreateAcode(t *testing.T) {
+	appid := "wx18b97eec31b6db56"
+	secret := "869aff2491fe005bfceb200e15679ffc"
+	app := New(appid,secret)
+	app.GetAccessToken().Token = "xxxxxx"
+	app.CreateAcode("pages/index/index","1")
+}
+
 func TestWxUploadTempMedia(t *testing.T) {
 	appid := "wx18b97eec31b6db56"
 	secret := "869aff2491fe005bfceb200e15679ffc"

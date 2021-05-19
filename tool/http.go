@@ -40,7 +40,7 @@ func ReduceUrl(uri string, params MapStr) (string, error) {
 //40001 获取 access_token 时 AppSecret 错误，或者 access_token 无效。请开发者认真比对 AppSecret 的正确性，或查看是否正在为恰当的公众号调用接口
 //42001 access_token 超时，请检查 access_token 的有效期，请参考基础支持 - 获取 access_token 中，对 access_token 的详细机制说明
 func checkTokenExpired(responseString string, m App) bool {
-	if strings.HasPrefix(expiredToken, gjson.Get(responseString, "errcode").String()) {
+	if strings.Contains(expiredToken, gjson.Get(responseString, "errcode").String()) {
 		m.GetAccessToken().UpdateTime = 0
 		return true
 	}
@@ -81,7 +81,7 @@ func Get(path string, extends ...interface{}) (string, error) {
 		return "", err
 	}
 	responseString := string(responseByte)
-	if strings.HasSuffix(response.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(responseString, *m) {
+	if strings.Contains(response.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(responseString, *m) {
 		return Get(path, extends...)
 	}
 	return responseString, nil
@@ -119,7 +119,7 @@ func PostBody(path string, body []byte, extends ...interface{}) ([]byte, error) 
 	if err != nil {
 		return []byte(""), err
 	}
-	if strings.HasSuffix(response.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(string(responseByte), *m) {
+	if strings.Contains(response.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(string(responseByte), *m) {
 		return PostBody(path, body, extends...)
 	}
 	return responseByte, nil
@@ -176,7 +176,7 @@ func PostBufferFile(path, name string, file multipart.File, fileHeader *multipar
 	}
 	defer resp.Body.Close()
 	responseByte := responseBody.Bytes()
-	if strings.HasSuffix(resp.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(string(responseByte), *m) {
+	if strings.Contains(resp.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(string(responseByte), *m) {
 		return PostBufferFile(path, name, file, fileHeader, extends...)
 	}
 	return responseByte, err
@@ -234,7 +234,7 @@ func PostPathFile(path, name string, file io.Reader, filePath string, extends ..
 	}
 	defer resp.Body.Close()
 	responseByte := responseBody.Bytes()
-	if strings.HasSuffix(resp.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(string(responseByte), *m) {
+	if strings.Contains(resp.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(string(responseByte), *m) {
 		return PostPathFile(path, name, file, filePath, extends...)
 	}
 	return responseByte, err

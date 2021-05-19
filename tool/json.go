@@ -5,13 +5,6 @@ import (
 	"encoding/json"
 )
 
-/**
- * @PROJECT_NAME wechat
- * @author  Moqi
- * @date  2021-04-23 10:37
- * @Email:str@li.cm
- **/
-
 func JsonToByte(t interface{}) []byte {
 	buffer := bytes.NewBuffer([]byte{})
 	jsonEncoder := json.NewEncoder(buffer)
