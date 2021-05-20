@@ -40,6 +40,9 @@ func ReduceUrl(uri string, params MapStr) (string, error) {
 //40001 获取 access_token 时 AppSecret 错误，或者 access_token 无效。请开发者认真比对 AppSecret 的正确性，或查看是否正在为恰当的公众号调用接口
 //42001 access_token 超时，请检查 access_token 的有效期，请参考基础支持 - 获取 access_token 中，对 access_token 的详细机制说明
 func checkTokenExpired(responseString string, m App) bool {
+	if gjson.Get(responseString, "errcode").String() == "0" {
+		return  false
+	}
 	if strings.Contains(expiredToken, gjson.Get(responseString, "errcode").String()) {
 		m.GetAccessToken().UpdateTime = 0
 		return true

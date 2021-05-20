@@ -31,4 +31,14 @@ func TestWxUploadTempMedia(t *testing.T) {
 	t.Log(app.UploadTempMedia("http://10.10.10.70:8888/resource/image/example/1583205009_A1aMNEdPeZN57b6a30eb59d64a089d030f1183981213.jpg"))
 }
 
+func TestApp_OcrBusinessLicense(t *testing.T) {
+	//https://image.platform.smartfacade.com.cn/tmp_4984410b35ba74caf4855b2200c862a043090648502553fb.jpg
+	url := "https://image.platform.smartfacade.com.cn/tmp_4984410b35ba74caf4855b2200c862a043090648502553fb.jpg"
+	appid := "wx18b97eec31b6db56"
+	secret := "869aff2491fe005bfceb200e15679f7c"
+	app := New(appid,secret)
+	result,err :=app.OcrBusinessLicense([]byte{},url)
+	t.Log(result,err)
+}
+
 
