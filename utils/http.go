@@ -1,4 +1,4 @@
-package tool
+package utils
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ func ContextApp(a App) App{
 }
 
 // ReduceUrl 合并url
-func ReduceUrl(uri string, params MapStr) (string, error) {
+func ReduceUrl(uri string, params Query) (string, error) {
 	parsedUri, err := url.Parse(uri)
 	if err != nil {
 		return "", err
@@ -37,17 +37,32 @@ func ReduceUrl(uri string, params MapStr) (string, error) {
 }
 
 // checkTokenExpired 判断access_token 是否过期
-//40001 获取 access_token 时 AppSecret 错误，或者 access_token 无效。请开发者认真比对 AppSecret 的正确性，或查看是否正在为恰当的公众号调用接口
-//42001 access_token 超时，请检查 access_token 的有效期，请参考基础支持 - 获取 access_token 中，对 access_token 的详细机制说明
 func checkTokenExpired(responseString string, m App) bool {
-	if gjson.Get(responseString, "errcode").String() == "0" {
-		return  false
-	}
-	if strings.Contains(expiredToken, gjson.Get(responseString, "errcode").String()) {
+	if value,ok := expiredToken[gjson.Get(responseString, "errcode").String()];ok {
 		m.GetAccessToken().UpdateTime = 0
-		return true
+		return value
 	}
 	return false
+}
+
+// FetchSource 获取资源
+func FetchSource(uri string) []byte{
+	uri2Url,_ := url.ParseRequestURI(uri)
+	result := []byte{}
+	request := http.Request{
+		Method: "GET",
+		Header: http.Header{
+			"User-Agent":[]string{"Mozilla/5.0 (Linux; Android 8.0; MI 6 Build/OPR1.170623.027; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.132 MQQBrowser/6.2 TBS/044304 Mobile Safari/537.36 MicroMessenger/6.7.3.1340(0x26070331) NetType/WIFI Language/zh_CN Process/tools"},
+		},
+		URL: uri2Url,
+	}
+	client := http.Client{}
+	img,err := client.Do(&request)
+	if err != nil {
+		return  result
+	}
+	imgBuffer,_ := ioutil.ReadAll(img.Body)
+	return  imgBuffer
 }
 
 /**
@@ -55,15 +70,15 @@ func checkTokenExpired(responseString string, m App) bool {
  * @author struggler
  * @description client get 注意：当传递mp的时候会自动获取token 并添加到 param里
  * @date 10:52 下午 2021/2/23
- * @return string,error
+ * @return []byte,error
  **/
-func Get(path string, extends ...interface{}) (string, error) {
+func Get(path string, extends ...interface{}) ([]byte, error) {
 	var m *App
 	domain := domain
-	params := MapStr{}
+	params := Query{}
 	for _, extend := range extends {
 		switch a := extend.(type) {
-		case MapStr:
+		case Query:
 			params = a
 		case Domain:
 			domain = a
@@ -73,21 +88,22 @@ func Get(path string, extends ...interface{}) (string, error) {
 		}
 	}
 	uri, _ := ReduceUrl(fmt.Sprintf("%s%s", domain, path), params)
+	var responseByte []byte
 	response, err := http.Get(uri)
 	defer response.Body.Close()
 	if err != nil {
-		return "", err
+		return responseByte, err
 	}
-	var responseByte []byte
+
 	responseByte,err = ioutil.ReadAll(response.Body)
 	if err != nil {
-		return "", err
+		return responseByte, err
 	}
 	responseString := string(responseByte)
 	if strings.Contains(response.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(responseString, *m) {
 		return Get(path, extends...)
 	}
-	return responseString, nil
+	return responseByte, nil
 }
 
 /**
@@ -100,10 +116,10 @@ func Get(path string, extends ...interface{}) (string, error) {
 func PostBody(path string, body []byte, extends ...interface{}) ([]byte, error) {
 	var m *App
 	domain := domain
-	params := MapStr{}
+	params := Query{}
 	for _, extend := range extends {
 		switch a := extend.(type) {
-		case MapStr:
+		case Query:
 			params = a
 		case Domain:
 			domain = a
@@ -129,19 +145,19 @@ func PostBody(path string, body []byte, extends ...interface{}) ([]byte, error) 
 }
 
 /**
- * @param path,name string, file multipart.File,fileHeader *multipart.FileHeader,params param,app App,domain string
+ * @param path,name string, file multipart.File,fileName *multipart.fileName,params param,app App,domain string
  * @author struggler
  * @description client postBufferFile 注意：当传递mp的时候会自动获取token 并添加到 param里
  * @date 10:52 下午 2021/2/23
  * @return string,error
  **/
-func PostBufferFile(path, name string, file multipart.File, fileHeader *multipart.FileHeader, extends ...interface{}) ([]byte, error) {
+func PostBufferFile(path, name string, file io.Reader, fileName string, extends ...interface{}) ([]byte, error) {
 	var m *App
 	domain := domain
-	params := MapStr{}
+	params := Query{}
 	for _, extend := range extends {
 		switch a := extend.(type) {
-		case MapStr:
+		case Query:
 			params = a
 		case Domain:
 			domain = a
@@ -153,7 +169,7 @@ func PostBufferFile(path, name string, file multipart.File, fileHeader *multipar
 	uri, _ := ReduceUrl(fmt.Sprintf("%s%s", domain, path), params)
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile(name, fileHeader.Filename)
+	part, err := writer.CreateFormFile(name, fileName)
 	if err != nil {
 		return nil, err
 	}
@@ -168,21 +184,16 @@ func PostBufferFile(path, name string, file multipart.File, fileHeader *multipar
 	}
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	client := &http.Client{}
-	resp, err := client.Do(request)
+	response, err := client.Do(request)
 	if err != nil {
 		return nil, err
 	}
-	responseBody := &bytes.Buffer{}
-	_, err = body.ReadFrom(resp.Body)
-	if err != nil {
-		return nil, err
+	result , _:=ioutil.ReadAll(response.Body)
+	defer response.Body.Close()
+	if strings.Contains(response.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(string(result), *m) {
+		return PostBufferFile(path, name, file, fileName, extends...)
 	}
-	defer resp.Body.Close()
-	responseByte := responseBody.Bytes()
-	if strings.Contains(resp.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(string(responseByte), *m) {
-		return PostBufferFile(path, name, file, fileHeader, extends...)
-	}
-	return responseByte, err
+	return result, err
 }
 
 /**
@@ -195,10 +206,10 @@ func PostBufferFile(path, name string, file multipart.File, fileHeader *multipar
 func PostPathFile(path, name string, file io.Reader, filePath string, extends ...interface{}) ([]byte, error) {
 	var m *App
 	domain := domain
-	params := MapStr{}
+	params := Query{}
 	for _, extend := range extends {
 		switch a := extend.(type) {
-		case MapStr:
+		case Query:
 			params = a
 		case Domain:
 			domain = a
@@ -243,48 +254,22 @@ func PostPathFile(path, name string, file io.Reader, filePath string, extends ..
 	return responseByte, err
 }
 
-func PostFileWithField(url, name string, file multipart.File, fileHeader *multipart.FileHeader, fields map[string]string) ([]byte, error) {
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	for k, v := range fields {
-		writer.WriteField(k, v)
-	}
-	part, err := writer.CreateFormFile(name, fileHeader.Filename)
-
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = io.Copy(part, file)
-
-	err = writer.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	request, err := http.NewRequest("POST", url, body)
-	if err != nil {
-		return nil, err
-	}
-	request.Header.Set("Content-Type", writer.FormDataContentType())
-	//request.Header.Set("header", "header")
-	client := &http.Client{}
-	resp, err := client.Do(request)
-
-	if err != nil {
-		return nil, err
-	} else {
-		body := &bytes.Buffer{}
-		_, err := body.ReadFrom(resp.Body)
-		if err != nil {
-			return nil, err
+func PostBufferFileWithField(path, name string, file io.Reader, fileName string, fields map[string]string,extends ...interface{}) ([]byte, error) {
+	var m *App
+	domain := domain
+	params := Query{}
+	for _, extend := range extends {
+		switch a := extend.(type) {
+		case Query:
+			params = a
+		case Domain:
+			domain = a
+		case App:
+			params["access_token"] = a.GetAccessToken().Token
+			m = &a
 		}
-		defer resp.Body.Close()
-		return body.Bytes(), err
 	}
-}
-
-func PostFileNameWithField(url, name string, file io.Reader, fileName string, fields map[string]string) ([]byte, error) {
+	uri, _ := ReduceUrl(fmt.Sprintf("%s%s", domain, path), params)
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	for k, v := range fields {
@@ -303,24 +288,68 @@ func PostFileNameWithField(url, name string, file io.Reader, fileName string, fi
 		return nil, err
 	}
 
-	request, err := http.NewRequest("POST", url, body)
+	request, err := http.NewRequest("POST", uri, body)
 	if err != nil {
 		return nil, err
 	}
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	//request.Header.Set("header", "header")
 	client := &http.Client{}
-	resp, err := client.Do(request)
+	response, err := client.Do(request)
 
 	if err != nil {
 		return nil, err
-	} else {
-		body := &bytes.Buffer{}
-		_, err := body.ReadFrom(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-		return body.Bytes(), err
 	}
+
+	result := &bytes.Buffer{}
+	_, err = result.ReadFrom(response.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+	if strings.Contains(response.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(result.String(), *m) {
+		return PostBufferFileWithField(path, name, file, fileName,fields, extends...)
+	}
+	return  result.Bytes(),nil
 }
+
+//func PostFileNameWithField(url, name string, file io.Reader, fileName string, fields map[string]string) ([]byte, error) {
+//	body := &bytes.Buffer{}
+//	writer := multipart.NewWriter(body)
+//	for k, v := range fields {
+//		writer.WriteField(k, v)
+//	}
+//	part, err := writer.CreateFormFile(name, fileName)
+//
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	_, err = io.Copy(part, file)
+//
+//	err = writer.Close()
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	request, err := http.NewRequest("POST", url, body)
+//	if err != nil {
+//		return nil, err
+//	}
+//	request.Header.Set("Content-Type", writer.FormDataContentType())
+//	//request.Header.Set("header", "header")
+//	client := &http.Client{}
+//	resp, err := client.Do(request)
+//
+//	if err != nil {
+//		return nil, err
+//	} else {
+//		body := &bytes.Buffer{}
+//		_, err := body.ReadFrom(resp.Body)
+//		if err != nil {
+//			return nil, err
+//		}
+//		defer resp.Body.Close()
+//		return body.Bytes(), err
+//	}
+//}

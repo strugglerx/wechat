@@ -1,4 +1,11 @@
-package miniapp
+package module
+
+/**
+ * @PROJECT_NAME wechat
+ * @author  Moqi
+ * @date  2021-05-20 14:02
+ * @Email:str@li.cm
+ **/
 
 type mapInterface map[string]interface{}
 
@@ -10,10 +17,15 @@ type User struct {
 	Status  bool   `json:"status,omitempty"`
 }
 
-type SessResponse struct {
+type Session struct {
 	Openid     string `json:"openid"`
 	SessionKey string `json:"session_key"`
 	Unionid    string `json:"unionid"`
+	Errcode    int    `json:"errcode"`
+	ErrMsg     string `json:"errmsg"`
+}
+
+type  Response struct {
 	Errcode    int    `json:"errcode"`
 	ErrMsg     string `json:"errmsg"`
 }

@@ -1,4 +1,4 @@
-package miniapp
+package module
 
 import (
 	"crypto/aes"

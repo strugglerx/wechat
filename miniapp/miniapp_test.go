@@ -4,9 +4,10 @@ import (
 	"testing"
 )
 
+const appid = "wx18b97eec31b6db56"
+const secret = "869aff2491fe005bfceb200e15679f7c"
+
 func TestWxSession(t *testing.T) {
-	appid := "wx18b97eec31b6db56"
-	secret := "869aff2491fe005bfceb200e15679ffc"
 	app := New(appid,secret)
 	for i:=1;i<=2 ; i++ {
 		t.Logf ("[%d] %s", i , app.GetAccessToken().Token)
@@ -14,31 +15,48 @@ func TestWxSession(t *testing.T) {
 }
 
 func TestApp_CreateAcode(t *testing.T) {
-	appid := "wx18b97eec31b6db56"
-	secret := "869aff2491fe005bfceb200e15679ffc"
 	app := New(appid,secret)
 	app.GetAccessToken().Token = "xxxxxx"
-	app.CreateAcode("pages/index/index","1")
-}
-
-func TestWxUploadTempMedia(t *testing.T) {
-	appid := "wx18b97eec31b6db56"
-	secret := "869aff2491fe005bfceb200e15679ffc"
-	app := &App{
-		Appid: appid,
-		Secret: secret,
-	}
-	t.Log(app.UploadTempMedia("http://10.10.10.70:8888/resource/image/example/1583205009_A1aMNEdPeZN57b6a30eb59d64a089d030f1183981213.jpg"))
+	app.Wxacode().GetUnlimited("pages/index/index","1")
 }
 
 func TestApp_OcrBusinessLicense(t *testing.T) {
-	//https://image.platform.smartfacade.com.cn/tmp_4984410b35ba74caf4855b2200c862a043090648502553fb.jpg
 	url := "https://image.platform.smartfacade.com.cn/tmp_4984410b35ba74caf4855b2200c862a043090648502553fb.jpg"
-	appid := "wx18b97eec31b6db56"
-	secret := "869aff2491fe005bfceb200e15679f7c"
 	app := New(appid,secret)
-	result,err :=app.OcrBusinessLicense([]byte{},url)
+	result,err :=app.Ocr().BusinessLicense(url)
 	t.Log(result,err)
 }
+
+func TestApp_CustomerServiceMessage(t *testing.T) {
+	url := "https://image.platform.smartfacade.com.cn/tmp_4984410b35ba74caf4855b2200c862a043090648502553fb.jpg"
+	app := New(appid,secret)
+	CustomerServiceMessage := app.CustomerServiceMessage()
+	result,err := CustomerServiceMessage.UploadTempMedia(url)
+	t.Log(result,err)
+	//media,err := CustomerServiceMessage.GetTempMedia(result)
+	//file,_ := os.Create("test.png")
+	//io.Copy(file,bytes.NewReader(media.([]byte)))
+	//t.Log(err)
+}
+
+func TestApp_Auth(t *testing.T) {
+	code := "xxxxxxxxxxxxx"
+	app := New(appid,secret)
+	result,err := app.Auth().Code2Session(code)
+	t.Log(result,err)
+}
+
+
+func TestApp_UrlScheme(t *testing.T) {
+	app := New(appid,secret)
+	result,err := app.UrlScheme().Generate([]byte(`{
+		"jump_wxa":{
+			"path":"/pages/index/index",
+			"query":""
+		}
+	}`))
+	t.Log(result,err)
+}
+
 
 
