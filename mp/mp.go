@@ -832,7 +832,7 @@ func (m *Mp) DelTemplateId(body []byte) (interface{}, error) {
 */
 func (m *Mp) PushTemplate(body []byte) (interface{}, error) {
 	var result interface{}
-	responseByte,err := utils.PostBody("/cgi-bin/message/example/send",body, utils.ContextApp(m))
+	responseByte,err := utils.PostBody("/cgi-bin/message/template/send",body, utils.ContextApp(m))
 	if err != nil {
 		return result,err
 	}
