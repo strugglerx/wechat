@@ -429,8 +429,8 @@ func (m *Mp) UploadTempMediaBinary(file io.Reader, fileName string, type_ string
 //上传临时素材
 //type :媒体文件类型，分别有图片（image）、语音（voice）、视频（video）和缩略图（thumb）
 func (m *Mp) UploadTempMedia(fileUrlPath, type_ string) (string, error) {
-	filePathsplit := strings.Split(fileUrlPath, "example")
-	fileLocalPath := fmt.Sprintf("./public/resource/image/example%s", filePathsplit[1])
+	filePathsplit := strings.Split(fileUrlPath, "template")
+	fileLocalPath := fmt.Sprintf("./public/resource/image/template%s", filePathsplit[1])
 	fileData, err := os.Open(fileLocalPath)
 	if err != nil {
 		return "", err
@@ -471,8 +471,8 @@ func (m *Mp) SetForeverNews(body []byte) (interface{}, error) {
 //上传永久素材
 //type :媒体文件类型，分别有图片（image）、语音（voice）、视频（video）和缩略图（thumb）
 func (m *Mp) UploadForeverMedia(fileUrlPath, type_ string) (string, error) {
-	filePathsplit := strings.Split(fileUrlPath, "example")
-	fileLocalPath := fmt.Sprintf("./public/resource/image/example%s", filePathsplit[1])
+	filePathsplit := strings.Split(fileUrlPath, "template")
+	fileLocalPath := fmt.Sprintf("./public/resource/image/template%s", filePathsplit[1])
 	fileData, err := os.Open(fileLocalPath)
 	if err != nil {
 		return "", err
@@ -723,7 +723,7 @@ func (m *Mp) CheckImg(file io.Reader, fileName string) (interface{}, error) {
 //}
 func (m *Mp) SetIndustry(body []byte) (interface{}, error) {
 	var result interface{}
-	responseByte,err := utils.PostBody("/cgi-bin/example/api_set_industry",body, utils.ContextApp(m))
+	responseByte,err := utils.PostBody("/cgi-bin/template/api_set_industry",body, utils.ContextApp(m))
 	if err != nil {
 		return result,err
 	}
@@ -737,7 +737,7 @@ func (m *Mp) SetIndustry(body []byte) (interface{}, error) {
 //获取设置的行业信息
 func (m *Mp) GetIndustry() (interface{}, error) {
 	var result interface{}
-	responseString, err := utils.Get("/cgi-bin/example/get_industry", utils.ContextApp(m))
+	responseString, err := utils.Get("/cgi-bin/template/get_industry", utils.ContextApp(m))
 	if err != nil {
 		return result, err
 	}
@@ -754,7 +754,7 @@ func (m *Mp) GetIndustry() (interface{}, error) {
 //}
 func (m *Mp) GetTemplateId(body []byte) (interface{}, error) {
 	var result TextResponse
-	responseByte,err := utils.PostBody("/cgi-bin/example/api_add_template",body, utils.ContextApp(m))
+	responseByte,err := utils.PostBody("/cgi-bin/template/api_add_template",body, utils.ContextApp(m))
 	if err != nil {
 		return result,err
 	}
@@ -768,7 +768,7 @@ func (m *Mp) GetTemplateId(body []byte) (interface{}, error) {
 //获取模板列表
 func (m *Mp) GetTemplateList() (interface{}, error) {
 	var result interface{}
-	responseString, err := utils.Get("/cgi-bin/example/get_all_private_template", utils.ContextApp(m))
+	responseString, err := utils.Get("/cgi-bin/template/get_all_private_template", utils.ContextApp(m))
 	if err != nil {
 		return result, err
 	}
@@ -785,7 +785,7 @@ func (m *Mp) GetTemplateList() (interface{}, error) {
 //}
 func (m *Mp) DelTemplateId(body []byte) (interface{}, error) {
 	var result TextResponse
-	responseByte,err := utils.PostBody("/cgi-bin/example/del_private_template",body, utils.ContextApp(m))
+	responseByte,err := utils.PostBody("/cgi-bin/template/del_private_template",body, utils.ContextApp(m))
 	if err != nil {
 		return result,err
 	}
@@ -870,7 +870,7 @@ func (m *Mp) PushTemplate(body []byte) (interface{}, error) {
 */
 func (m *Mp) PushSubscribeTemplate(body []byte) (interface{}, error) {
 	var result interface{}
-	responseByte,err := utils.PostBody("/cgi-bin/message/example/subscribe",body, utils.ContextApp(m))
+	responseByte,err := utils.PostBody("/cgi-bin/message/template/subscribe",body, utils.ContextApp(m))
 	if err != nil {
 		return result,err
 	}
