@@ -28,6 +28,8 @@ type Token struct {
 	UpdateTime int
 }
 
+type Hook func(token ...string) *Token
+
 type Domain string
 
 type MapStr map[string]string

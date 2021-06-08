@@ -100,6 +100,7 @@ func TestPushTemplate(t *testing.T) {
 		Appid:"wxac5621df42a3bc11",
 		Secret: "b7c259a57d55dd109a01dc3b578cg316",
 	}
+	mp.init()
 	mp.PushTemplate([]byte(`{
            "touser":"o8zsstzrjSvlC9MHI6yfOUMNNi5Q",
            "template_id":"TyU1XvqQVc9XEQDGxsR9bro2gkIigCpriLyMm4jvL2o",

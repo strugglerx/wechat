@@ -7,17 +7,23 @@ import (
 	"time"
 )
 
+
 type App struct {
 	Appid  string
 	Secret string
 	Token  *utils.Token
+	Hook utils.Hook
 }
 
-//New 新建wechat
-func New(appid, secret string) *App {
+
+//New 新建wechat Hook 处理accesstoken的逻辑
+func New(appid, secret string,Hook ...utils.Hook) *App {
 	app := &App{
 		Appid:  appid,
 		Secret: secret,
+	}
+	if len(Hook)!=0{
+		app.Hook = Hook[0]
 	}
 	app.init()
 	return app
@@ -46,6 +52,10 @@ func (a *App) init() {
 	if a.Token.Token == "" {
 		panic("Wechat Package [" + a.Appid + "] : \n" + string(response))
 	}
+	// Hook Logic
+	if a.Hook!=nil{
+		a.Hook(a.Token.Token)
+	}
 	a.Token.UpdateTime = int(time.Now().Unix())
 }
 
@@ -56,6 +66,10 @@ func (a *App) GetAccessTokenSafety(reflush bool) string {
 
 //GetAccessToken 获取accessToken 不建议暴露使用
 func (a *App) GetAccessToken(reflush ...bool) *utils.Token {
+	//hook
+	if a.Hook!=nil{
+		return a.GetAccessTokenWithHook(reflush...)
+	}
 	if a.Token == nil {
 		a.Token = &utils.Token{
 			Token:      "",
@@ -79,6 +93,36 @@ func (a *App) GetAccessToken(reflush ...bool) *utils.Token {
 		return a.Token
 	} else {
 		return a.Token
+	}
+}
+
+//GetAccessTokenWithHook 获取accessToken 不建议暴露使用
+func (a *App) GetAccessTokenWithHook(reflush ...bool) *utils.Token {
+	token := a.Hook()
+	if token == nil {
+		token = &utils.Token{
+			Token:      "",
+			UpdateTime: 0,
+		}
+	}
+	nowTime := int(time.Now().Unix())
+	doReflush := false
+	if len(reflush)>0 {
+		doReflush = true
+	}
+	if nowTime-token.UpdateTime >= 7000 || doReflush {
+		params := utils.Query{
+			"appid":      a.Appid,
+			"secret":     a.Secret,
+			"grant_type": "client_credential",
+		}
+		response, _ := utils.Get("/cgi-bin/token", params)
+		token.Token = gjson.Get(string(response), "access_token").String()
+		token.UpdateTime = nowTime
+		a.Token = a.Hook(token.Token)
+		return token
+	} else {
+		return token
 	}
 }
 

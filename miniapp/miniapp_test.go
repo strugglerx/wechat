@@ -1,15 +1,24 @@
 package miniapp
 
 import (
+	"github.com/strugglerx/wechat/utils"
 	"testing"
+	"time"
 )
 
 const appid = "wx18b97eec31b6db56"
 const secret = "869aff2491fe005bfceb200e15679f7c"
 
 func TestWxSession(t *testing.T) {
-	app := New(appid,secret)
-	for i:=1;i<=2 ; i++ {
+	var cacheToken utils.Token
+	app := New(appid,secret, func(token ...string) *utils.Token {
+		if len(token)>0{
+			cacheToken.Token = token[0]
+			cacheToken.UpdateTime =  int(time.Now().Unix())
+		}
+		return &cacheToken
+	})
+	for i:=1;i<=10 ; i++ {
 		t.Logf ("[%d] %s", i , app.GetAccessToken().Token)
 	}
 }

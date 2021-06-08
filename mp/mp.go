@@ -20,6 +20,7 @@ type Mp struct {
 	Secret string
 	Token *utils.Token
 	Oauth2Token *OauthToken
+	Hook utils.Hook
 }
 
 /**
@@ -29,10 +30,13 @@ type Mp struct {
  * @date 10:36 上午 2021/2/24
  * @return
  **/
-func New(appid,secret string) *Mp {
+func New(appid,secret string,Hook ...utils.Hook) *Mp {
 	mp := &Mp{
 		Appid: appid,
 		Secret: secret,
+	}
+	if len(Hook)!=0{
+		mp.Hook = Hook[0]
 	}
 	//mp.init()
 	return mp
@@ -67,6 +71,10 @@ func (m *Mp) init() {
 	if m.Token.Token == "" {
 		panic("WechatMp Package [" + m.Appid + "] : \n" + string(responseString))
 	}
+	// Hook Logic
+	if m.Hook!=nil{
+		m.Hook(m.Token.Token)
+	}
 	m.Token.UpdateTime = int(time.Now().Unix())
 }
 
@@ -98,6 +106,10 @@ func (m *Mp) Session(code string) (User, error) {
 
 //获取accessToken
 func (m *Mp) GetAccessToken(reflush ...bool) *utils.Token {
+	//hook
+	if m.Hook!=nil{
+		return m.GetAccessTokenWithHook(reflush...)
+	}
 	if m.Token == nil {
 		m.Token = &utils.Token{
 			Token:      "",
@@ -121,6 +133,36 @@ func (m *Mp) GetAccessToken(reflush ...bool) *utils.Token {
 		return m.Token
 	} else {
 		return m.Token
+	}
+}
+
+//获取accessToken
+func (m *Mp) GetAccessTokenWithHook(reflush ...bool) *utils.Token {
+	token := m.Hook()
+	if token == nil {
+		token = &utils.Token{
+			Token:      "",
+			UpdateTime: 0,
+		}
+	}
+	nowTime := int(time.Now().Unix())
+	doReflush := false
+	if len(reflush)>0 {
+		doReflush = true
+	}
+	if nowTime - token.UpdateTime >= 3600 || doReflush {
+		params := utils.Query{
+			"appid":      m.Appid,
+			"secret":     m.Secret,
+			"grant_type": "client_credential",
+		}
+		response, _ := utils.Get("/cgi-bin/token",params)
+		token.Token = gjson.Get(string(response), "access_token").String()
+		token.UpdateTime = nowTime
+		m.Token = m.Hook(token.Token)
+		return token
+	} else {
+		return token
 	}
 }
 
