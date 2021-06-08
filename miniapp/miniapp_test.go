@@ -13,9 +13,11 @@ func TestWxSession(t *testing.T) {
 	var cacheToken utils.Token
 	app := New(appid,secret, func(token ...string) *utils.Token {
 		if len(token)>0{
+			// save token logic
 			cacheToken.Token = token[0]
 			cacheToken.UpdateTime =  int(time.Now().Unix())
 		}
+		//read token logic
 		return &cacheToken
 	})
 	for i:=1;i<=10 ; i++ {
@@ -33,6 +35,32 @@ func TestApp_OcrBusinessLicense(t *testing.T) {
 	url := "https://image.platform.smartfacade.com.cn/tmp_4984410b35ba74caf4855b2200c862a043090648502553fb.jpg"
 	app := New(appid,secret)
 	result,err :=app.Ocr().BusinessLicense(url)
+	t.Log(app.GetAccessToken().Token)
+	t.Log(result,err)
+	app.GetAccessToken().Token = "dsadasdasdsd"
+	result,err =app.Ocr().BusinessLicense(url)
+	t.Log(app.GetAccessToken().Token)
+	t.Log(result,err)
+}
+
+func TestApp_OcrBusinessLicenseWithHook(t *testing.T) {
+	var cacheToken utils.Token
+	url := "https://image.platform.smartfacade.com.cn/tmp_4984410b35ba74caf4855b2200c862a043090648502553fb.jpg"
+	app := New(appid,secret, func(token ...string) *utils.Token {
+		if len(token)>0{
+			// save token logic
+			cacheToken.Token = token[0]
+			cacheToken.UpdateTime =  int(time.Now().Unix())
+		}
+		//read token logic
+		return &cacheToken
+	})
+	result,err :=app.Ocr().BusinessLicense(url)
+	t.Log(app.GetAccessToken().Token)
+	t.Log(result,err)
+	app.GetAccessToken().Token = "dsadasdasdsd"
+	result,err =app.Ocr().BusinessLicense(url)
+	t.Log(app.GetAccessToken().Token)
 	t.Log(result,err)
 }
 

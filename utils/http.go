@@ -40,6 +40,7 @@ func ReduceUrl(uri string, params Query) (string, error) {
 func checkTokenExpired(responseString string, m App) bool {
 	if value,ok := expiredToken[gjson.Get(responseString, "errcode").String()];ok {
 		m.GetAccessToken().UpdateTime = 0
+		m.GetAccessToken(true)
 		return value
 	}
 	return false
