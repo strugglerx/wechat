@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/tidwall/gjson"
 	"io"
@@ -39,11 +40,21 @@ func ReduceUrl(uri string, params Query) (string, error) {
 // checkTokenExpired 判断access_token 是否过期
 func checkTokenExpired(responseString string, m App) bool {
 	if value,ok := expiredToken[gjson.Get(responseString, "errcode").String()];ok {
-		m.GetAccessToken().UpdateTime = 0
 		m.GetAccessToken(true)
 		return value
 	}
 	return false
+}
+
+// ExtractAppidAndAccessToken 提取appid 和 accessToken
+func ExtractAppidAndAccessToken(appidAndAccessToken ...string) (ContextToken,error){
+	if len(appidAndAccessToken) == 2 {
+		return ContextToken{
+			Appid: appidAndAccessToken[0],
+			Token: appidAndAccessToken[1],
+		},nil
+	}
+	return  ContextToken{},errors.New("appidAndAccessToken length must 2")
 }
 
 // FetchSource 获取资源
@@ -69,7 +80,7 @@ func FetchSource(uri string) []byte{
 /**
  * @param path string,params param,app App,domain string
  * @author struggler
- * @description client get 注意：当传递mp的时候会自动获取token 并添加到 param里
+ * @description client get 注意：当传递App的时候会自动获取token 并添加到 param里
  * @date 10:52 下午 2021/2/23
  * @return []byte,error
  **/
@@ -110,7 +121,7 @@ func Get(path string, extends ...interface{}) ([]byte, error) {
 /**
  * @param path string,params param,app App,domain string
  * @author struggler
- * @description client postJson 注意：当传递mp的时候会自动获取token 并添加到 param里
+ * @description client postJson 注意：当传递App的时候会自动获取token 并添加到 param里
  * @date 10:52 下午 2021/2/23
  * @return string,error
  **/
@@ -148,7 +159,7 @@ func PostBody(path string, body []byte, extends ...interface{}) ([]byte, error) 
 /**
  * @param path,name string, file multipart.File,fileName *multipart.fileName,params param,app App,domain string
  * @author struggler
- * @description client postBufferFile 注意：当传递mp的时候会自动获取token 并添加到 param里
+ * @description client postBufferFile 注意：当传递App的时候会自动获取token 并添加到 param里
  * @date 10:52 下午 2021/2/23
  * @return string,error
  **/
@@ -200,7 +211,7 @@ func PostBufferFile(path, name string, file io.Reader, fileName string, extends 
 /**
  * @param path,name string, file io.Reader,filePath string,params param,app App,domain string
  * @author struggler
- * @description client postFilePath 注意：当传递mp的时候会自动获取token 并添加到 param里
+ * @description client postFilePath 注意：当传递App的时候会自动获取token 并添加到 param里
  * @date 10:52 下午 2021/2/23
  * @return string,error
  **/

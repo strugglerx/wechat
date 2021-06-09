@@ -15,9 +15,26 @@ require github.com/strugglerx/wechat
 
 # Usage
 ```golang
+
 appid := "xx"
 secret := "xx"
+
+//sample
 app := miniapp.New(appid,secret)
+
+//hook
+var cacheToken utils.Token
+app := New(appid,secret, func(appidAndAccessToken ...string) *utils.Token {
+    if contextToken,err := utils.ExtractAppidAndAccessToken(appidAndAccessToken...);err == nil{
+        // write token logic
+        cacheToken.Token = contextToken.Token
+        cacheToken.UpdateTime =  int(time.Now().Unix())
+        return &cacheToken
+    }
+    //read token logic
+    return &cacheToken
+    })
+
 //To Do
 ```
 

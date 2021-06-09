@@ -54,7 +54,7 @@ func (a *App) init() {
 	}
 	// Hook Logic
 	if a.Hook!=nil{
-		a.Hook(a.Token.Token)
+		a.Hook(a.Appid,a.Token.Token)
 	}
 	a.Token.UpdateTime = int(time.Now().Unix())
 }
@@ -119,7 +119,7 @@ func (a *App) GetAccessTokenWithHook(reflush ...bool) *utils.Token {
 		response, _ := utils.Get("/cgi-bin/token", params)
 		token.Token = gjson.Get(string(response), "access_token").String()
 		token.UpdateTime = nowTime
-		a.Token = a.Hook(token.Token)
+		a.Token = a.Hook(a.Appid,token.Token)
 		return token
 	} else {
 		return token

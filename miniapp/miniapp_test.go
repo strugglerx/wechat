@@ -10,16 +10,7 @@ const appid = "wx18b97eec31b6db56"
 const secret = "869aff2491fe005bfceb200e15679f7c"
 
 func TestWxSession(t *testing.T) {
-	var cacheToken utils.Token
-	app := New(appid,secret, func(token ...string) *utils.Token {
-		if len(token)>0{
-			// save token logic
-			cacheToken.Token = token[0]
-			cacheToken.UpdateTime =  int(time.Now().Unix())
-		}
-		//read token logic
-		return &cacheToken
-	})
+	app := New(appid,secret)
 	for i:=1;i<=10 ; i++ {
 		t.Logf ("[%d] %s", i , app.GetAccessToken().Token)
 	}
@@ -46,11 +37,12 @@ func TestApp_OcrBusinessLicense(t *testing.T) {
 func TestApp_OcrBusinessLicenseWithHook(t *testing.T) {
 	var cacheToken utils.Token
 	url := "https://image.platform.smartfacade.com.cn/tmp_4984410b35ba74caf4855b2200c862a043090648502553fb.jpg"
-	app := New(appid,secret, func(token ...string) *utils.Token {
-		if len(token)>0{
-			// save token logic
-			cacheToken.Token = token[0]
+	app := New(appid,secret, func(appidAndAccessToken ...string) *utils.Token {
+		if contextToken,err := utils.ExtractAppidAndAccessToken(appidAndAccessToken...);err == nil{
+			// write token logic
+			cacheToken.Token = contextToken.Token
 			cacheToken.UpdateTime =  int(time.Now().Unix())
+			return &cacheToken
 		}
 		//read token logic
 		return &cacheToken
