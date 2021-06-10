@@ -1277,3 +1277,23 @@ func (m *Mp) GetCommentList(msgDataId, index, begin, count, type_ int) (interfac
 	}
 	return result,nil
 }
+
+//Get
+func (a *Mp) Get(path string,params utils.Query,withAccessToken ...bool) ([]byte,error)  {
+	if len(withAccessToken)>0{
+		response, err := utils.Get(path, params,utils.ContextApp(a))
+		return response,err
+	}
+	response, err := utils.Get(path, params)
+	return response,err
+}
+
+//Post
+func (a *Mp) PostBody(path string,body []byte ,withAccessToken ...bool) ([]byte,error)  {
+	if len(withAccessToken)>0{
+		response, err := utils.PostBody(path, body,utils.ContextApp(a))
+		return response,err
+	}
+	response, err := utils.PostBody(path, body)
+	return response,err
+}
