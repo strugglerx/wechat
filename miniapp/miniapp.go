@@ -77,8 +77,8 @@ func (a *App) GetAccessToken(reflush ...bool) *utils.Token {
 	}
 	nowTime := int(time.Now().Unix())
 	doReflush := false
-	if len(reflush) > 0 && reflush[0] == true {
-		doReflush = true
+	if len(reflush) > 0 {
+		doReflush = reflush[0]
 	}
 	if nowTime-a.Token.UpdateTime >= 7000 || doReflush {
 		params := utils.Query{
