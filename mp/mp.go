@@ -414,7 +414,6 @@ func (m *Mp) SendMpnewsMsg(openid, mediaid string) int64 {
 	if err != nil {
 		return  1
 	}
-	//t
 	return gjson.Get(string(responseByte), "errcode").Int()
 }
 
