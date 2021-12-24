@@ -20,7 +20,7 @@ func (m *Mp) GetOauthAccessToken(code string) *OauthToken {
 		"code":       code,
 		"grant_type": "authorization_code",
 	}
-	response,_ := utils.Get("/sns/oauth2/access_token",params)
+	response, _ := utils.Get("/sns/oauth2/access_token", params)
 	m.Oauth2Token = &OauthToken{
 		Token:        gjson.Get(string(response), "access_token").String(),
 		ExpiresIn:    int(gjson.Get(string(response), "expires_in").Int()),
@@ -39,7 +39,7 @@ func (m *Mp) RefreshOauthAccessToken(refreshToken string) (interface{}, error) {
 		"refresh_token": refreshToken,
 		"grant_type":    "client_credential",
 	}
-	responseString, err := utils.Get("/cgi-bin/token",params)
+	responseString, err := utils.Get("/sns/oauth2/refresh_token", params)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (m *Mp) GetOauthUserInfo(token, openid string) (string, error) {
 		"openid":       openid,
 		"lang":         "zh_CN",
 	}
-	response, err := utils.Get("/sns/userinfo",params)
+	response, err := utils.Get("/sns/userinfo", params)
 	if err != nil {
 		return "", err
 	}
@@ -66,7 +66,7 @@ func (m *Mp) VerifyOauthToken(openid string) (interface{}, error) {
 		"access_token": m.Oauth2Token.Token,
 		"openid":       openid,
 	}
-	response, err := utils.Get("/sns/auth",params)
+	response, err := utils.Get("/sns/auth", params)
 	if err != nil || gjson.Get(string(response), "errcode").Int() != 0 {
 		return nil, errors.New("remain")
 	}
