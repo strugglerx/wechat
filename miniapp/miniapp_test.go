@@ -1,14 +1,15 @@
 package miniapp
 
 import (
+	"regexp"
 	"testing"
 	"time"
 
 	"github.com/strugglerx/wechat/utils"
 )
 
-const appid = "wx044f45b5fd8fb87c"
-const secret = "ab99034aed77b4a43b1738babf2040ce"
+const appid = "wx62d6c402f2923995"
+const secret = "65e26db7c685fd6a299bebb042233bc0"
 
 func TestWxSession(t *testing.T) {
 	app := New(appid, secret)
@@ -33,6 +34,78 @@ func TestApp_OcrBusinessLicense(t *testing.T) {
 	result, err = app.Ocr().BusinessLicense(url)
 	t.Log(app.GetAccessToken().Token)
 	t.Log(result, err)
+}
+
+func TestApp_Ocr(t *testing.T) {
+	//url := "https://image.platform.smartfacade.com.cn/tmp_f9992847c6952413266f4c81071e2ef610135abd61d354af.jpg"
+	//app := New(appid, secret)
+	//result, err := app.Ocr().PrintedText(url)
+	//t.Log(app.GetAccessToken().Token)
+	//
+	//te, err := json.Marshal(result)
+	//type OcrResponse struct {
+	//	Errcode int    `json:"errcode"`
+	//	Errmsg  string `json:"errmsg"`
+	//	ImgSize struct {
+	//		H int `json:"h"`
+	//		W int `json:"w"`
+	//	} `json:"img_size"`
+	//	Items []struct {
+	//		Pos struct {
+	//			LeftBottom struct {
+	//				X int `json:"x"`
+	//				Y int `json:"y"`
+	//			} `json:"left_bottom"`
+	//			LeftTop struct {
+	//				X int `json:"x"`
+	//				Y int `json:"y"`
+	//			} `json:"left_top"`
+	//			RightBottom struct {
+	//				X int `json:"x"`
+	//				Y int `json:"y"`
+	//			} `json:"right_bottom"`
+	//			RightTop struct {
+	//				X int `json:"x"`
+	//				Y int `json:"y"`
+	//			} `json:"right_top"`
+	//		} `json:"pos"`
+	//		Text string `json:"text"`
+	//	} `json:"items"`
+	//}
+	//var r OcrResponse
+	//err = json.Unmarshal(te, &r)
+	//t.Log(err)
+	//text := ""
+	//if r.Errcode == 0 {
+	//	for _, v := range r.Items {
+	//		text += v.Text
+	//	}
+	//}
+	//t.Log(text)
+	text := "港澳居民来往内地通行证蒋元红JIANG,YUANHONG出生日期性刷女1982.04.20有效期限2021.12.13-2031.12.12签发机关中华人民共和国出入境管理局证件号码换证次数01H10481010THIS CARD IS INTENDED FOR ITS HOLDER TO TRAVEL TO THE MAINLAND OF CHINA"
+	rgx, _ := regexp.Compile(`内地通行证([^\w]+)[A-Z]+.*?(H[\d]{8})`)
+	list := rgx.FindStringSubmatch(text)
+	t.Log(list)
+	//text := "中国联通14:3350%/核酸检测记录·●核酸检测记录心刷新检测完成检测中采样时间2022-02-2321:05检测时间2022-02-2408:00检测机构深圳海普洛斯医学检验实验室数据来源广东省卫生健康委员会检测结果阴性采样时间2022-02-2121:56检测时间2022-02-2200:04外省核酸查不到?点这里>>"
+	//text := "14:28<核酸检测记录核酸检测记录O刷新检测完成检测中杨曼妮采样时间2022-02-24 16:25检测时间2022-02-24 23:50检测机构珠海横琴铂华医学检验实验室数据来源广东省卫生健康委员会检测结果阴性杨曼妮采样时间2022-02-23 18:57检测时间2022-02-24 15:34检测机构深圳海普洛斯医学检验实验室数据来源广东省卫生健康委员会检测结果阴性外省核酸查不到?点这里>>"
+	//(采样时间|检测时间)
+	//rgx, _ := regexp.Compile(`(采样时间|检测时间)(\d{4}-\d{2}-\d{2}[ ]?\d{2}:\d{2})`)
+	//list := rgx.FindAllStringSubmatch(text, -1)
+	//result := map[string]string{}
+	//timergx, _ := regexp.Compile(`(\d{4}-\d{2}-\d{2}\d{2}:\d{2})`)
+	//def := map[string]string{
+	//	"采样时间": "collect_time",
+	//	"检测时间": "testing_time",
+	//}
+	//for _, v := range list[0:2] {
+	//	t.Log(v)
+	//	time := v[2]
+	//	if timergx.MatchString(time) {
+	//		time = time[0:10] + " " + time[10:]
+	//	}
+	//	result[def[v[1]]] = time
+	//}
+	//t.Log(result)
 }
 
 func TestApp_OcrBusinessLicenseWithHook(t *testing.T) {
@@ -80,9 +153,21 @@ func TestApp_UrlScheme(t *testing.T) {
 	app := New(appid, secret)
 	result, err := app.UrlScheme().Generate([]byte(`{
 		"jump_wxa":{
-			"path":"/pages/index/index",
+			"path":"/pages/logs/logs",
 			"query":""
 		}
+	}`))
+	t.Log(result, err)
+}
+
+func TestApp_UrlLink(t *testing.T) {
+	app := New(appid, secret)
+	result, err := app.UrlLink().Generate([]byte(`{
+		"path":"/pages/logs/logs",
+		"query":"",
+		"is_expire":true,
+		"expire_type":1,
+		"expire_interval":181
 	}`))
 	t.Log(result, err)
 }
