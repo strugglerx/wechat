@@ -114,7 +114,7 @@ func (a *App) GetAccessTokenWithHook(reflush ...bool) *utils.Token {
 	nowTime := int(time.Now().Unix())
 	doReflush := false
 	if len(reflush) > 0 {
-		doReflush = true
+		doReflush = reflush[0]
 	}
 	if nowTime-token.UpdateTime >= 7000 || doReflush {
 		params := utils.Query{
@@ -193,22 +193,21 @@ func (a *App) Gamematch() *module.Gamematch {
 }
 
 //Get
-func (a *App) Get(path string,params utils.Query,withAccessToken ...bool) ([]byte,error)  {
-	if len(withAccessToken)>0{
-		response, err := utils.Get(path, params,utils.ContextApp(a))
-		return response,err
+func (a *App) Get(path string, params utils.Query, withAccessToken ...bool) ([]byte, error) {
+	if len(withAccessToken) > 0 {
+		response, err := utils.Get(path, params, utils.ContextApp(a))
+		return response, err
 	}
 	response, err := utils.Get(path, params)
-	return response,err
+	return response, err
 }
 
 //Post
-func (a *App) PostBody(path string,body []byte ,withAccessToken ...bool) ([]byte,error)  {
-	if len(withAccessToken)>0{
-		response, err := utils.PostBody(path, body,utils.ContextApp(a))
-		return response,err
+func (a *App) PostBody(path string, body []byte, withAccessToken ...bool) ([]byte, error) {
+	if len(withAccessToken) > 0 {
+		response, err := utils.PostBody(path, body, utils.ContextApp(a))
+		return response, err
 	}
 	response, err := utils.PostBody(path, body)
-	return response,err
+	return response, err
 }
-
