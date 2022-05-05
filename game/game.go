@@ -192,7 +192,6 @@ func (a *App) Gamematch() *module.Gamematch {
 	return module.GamematchEntity.Init(a)
 }
 
-//Get
 func (a *App) Get(path string, params utils.Query, withAccessToken ...bool) ([]byte, error) {
 	if len(withAccessToken) > 0 {
 		response, err := utils.Get(path, params, utils.ContextApp(a))

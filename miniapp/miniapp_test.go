@@ -8,8 +8,8 @@ import (
 	"github.com/strugglerx/wechat/utils"
 )
 
-const appid = "wx62d6c402f2923995"
-const secret = "65e26db7c685fd6a299bebb042233bc0"
+const appid = "wxb6e0730e1f5c8a98"
+const secret = "afbc1b1c8beefd3e5e9048faad4dd078"
 
 func TestWxSession(t *testing.T) {
 	app := New(appid, secret)
@@ -163,11 +163,11 @@ func TestApp_UrlScheme(t *testing.T) {
 func TestApp_UrlLink(t *testing.T) {
 	app := New(appid, secret)
 	result, err := app.UrlLink().Generate([]byte(`{
-		"path":"/pages/logs/logs",
-		"query":"",
+		"path":"/package/pages/epidemic_report/index",
+		"query":"street_id=2",
 		"is_expire":true,
 		"expire_type":1,
-		"expire_interval":181
+		"expire_interval":179
 	}`))
 	t.Log(result, err)
 }
@@ -185,4 +185,12 @@ func TestApp_DecodedData(t *testing.T) {
 		iv := "ucPPsWmmrZ1wAtiA7L3xow=="
 		t.Log(app.DecodedData().DecodeCryptoData(sessionKey, encryptedData, iv))
 	}
+}
+
+func TestApp_PhoneNumber(t *testing.T) {
+	app := New(appid, secret)
+	result, err := app.PhoneNumber().GetPhoneNumber([]byte(`{
+		"code":"03c52dedef3306d529d53bb31452ec9a2f46880b2040cec9d760876e821f9429"
+	}`))
+	t.Log(result, err)
 }

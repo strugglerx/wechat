@@ -212,7 +212,11 @@ func (a *App) DataAnalysis() *module.DataAnalysis {
 	return module.DataAnalysisEntity.Init(a)
 }
 
-//Get
+//PhoneNumber 手机号
+func (a *App) PhoneNumber() *module.PhoneNumber {
+	return module.PhoneNumberEntity.Init(a)
+}
+
 func (a *App) Get(path string, params utils.Query, withAccessToken ...bool) ([]byte, error) {
 	if len(withAccessToken) > 0 {
 		response, err := utils.Get(path, params, utils.ContextApp(a))
@@ -222,7 +226,6 @@ func (a *App) Get(path string, params utils.Query, withAccessToken ...bool) ([]b
 	return response, err
 }
 
-//Post
 func (a *App) PostBody(path string, body []byte, withAccessToken ...bool) ([]byte, error) {
 	if len(withAccessToken) > 0 {
 		response, err := utils.PostBody(path, body, utils.ContextApp(a))

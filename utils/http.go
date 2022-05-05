@@ -13,9 +13,8 @@ import (
 	"strings"
 )
 
-// ContextApp
-func ContextApp(a App) App{
-	return  a
+func ContextApp(a App) App {
+	return a
 }
 
 // ReduceUrl 合并url
@@ -39,7 +38,7 @@ func ReduceUrl(uri string, params Query) (string, error) {
 
 // checkTokenExpired 判断access_token 是否过期
 func checkTokenExpired(responseString string, m App) bool {
-	if value,ok := expiredToken[gjson.Get(responseString, "errcode").String()];ok {
+	if value, ok := expiredToken[gjson.Get(responseString, "errcode").String()]; ok {
 		m.GetAccessToken(true)
 		return value
 	}
@@ -47,36 +46,37 @@ func checkTokenExpired(responseString string, m App) bool {
 }
 
 // ExtractAppidAndAccessToken 提取appid 和 accessToken
-func ExtractAppidAndAccessToken(appidAndAccessToken ...string) (ContextToken,error){
+func ExtractAppidAndAccessToken(appidAndAccessToken ...string) (ContextToken, error) {
 	if len(appidAndAccessToken) == 2 {
 		return ContextToken{
 			Appid: appidAndAccessToken[0],
 			Token: appidAndAccessToken[1],
-		},nil
+		}, nil
 	}
-	return  ContextToken{},errors.New("appidAndAccessToken length must 2")
+	return ContextToken{}, errors.New("appidAndAccessToken length must 2")
 }
 
 // FetchSource 获取资源
-func FetchSource(uri string) []byte{
-	uri2Url,_ := url.ParseRequestURI(uri)
-	result := []byte{}
+func FetchSource(uri string) []byte {
+	uri2Url, _ := url.ParseRequestURI(uri)
+	result := make([]byte, 0)
 	request := http.Request{
 		Method: "GET",
 		Header: http.Header{
-			"User-Agent":[]string{"Mozilla/5.0 (Linux; Android 8.0; MI 6 Build/OPR1.170623.027; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.132 MQQBrowser/6.2 TBS/044304 Mobile Safari/537.36 MicroMessenger/6.7.3.1340(0x26070331) NetType/WIFI Language/zh_CN Process/tools"},
+			"User-Agent": []string{"Mozilla/5.0 (Linux; Android 8.0; MI 6 Build/OPR1.170623.027; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.132 MQQBrowser/6.2 TBS/044304 Mobile Safari/537.36 MicroMessenger/6.7.3.1340(0x26070331) NetType/WIFI Language/zh_CN Process/tools"},
 		},
 		URL: uri2Url,
 	}
 	client := http.Client{}
-	img,err := client.Do(&request)
+	img, err := client.Do(&request)
 	if err != nil {
-		return  result
+		return result
 	}
-	imgBuffer,_ := ioutil.ReadAll(img.Body)
-	return  imgBuffer
+	imgBuffer, _ := ioutil.ReadAll(img.Body)
+	return imgBuffer
 }
 
+//Get
 /**
  * @param path string,params param,app App,domain string
  * @author struggler
@@ -107,7 +107,7 @@ func Get(path string, extends ...interface{}) ([]byte, error) {
 		return responseByte, err
 	}
 
-	responseByte,err = ioutil.ReadAll(response.Body)
+	responseByte, err = ioutil.ReadAll(response.Body)
 	if err != nil {
 		return responseByte, err
 	}
@@ -118,6 +118,7 @@ func Get(path string, extends ...interface{}) ([]byte, error) {
 	return responseByte, nil
 }
 
+//PostBody
 /**
  * @param path string,params param,app App,domain string
  * @author struggler
@@ -141,12 +142,12 @@ func PostBody(path string, body []byte, extends ...interface{}) ([]byte, error) 
 		}
 	}
 	uri, _ := ReduceUrl(fmt.Sprintf("%s%s", domain, path), params)
-	response, err := http.Post(uri,"",bytes.NewBuffer(body))
+	response, err := http.Post(uri, "", bytes.NewReader(body))
 	defer response.Body.Close()
 	if err != nil {
 		return []byte(""), err
 	}
-	responseByte,err := ioutil.ReadAll(response.Body)
+	responseByte, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return []byte(""), err
 	}
@@ -156,6 +157,7 @@ func PostBody(path string, body []byte, extends ...interface{}) ([]byte, error) 
 	return responseByte, nil
 }
 
+//PostBufferFile
 /**
  * @param path,name string, file multipart.File,fileName *multipart.fileName,params param,app App,domain string
  * @author struggler
@@ -200,7 +202,7 @@ func PostBufferFile(path, name string, file io.Reader, fileName string, extends 
 	if err != nil {
 		return nil, err
 	}
-	result , _:=ioutil.ReadAll(response.Body)
+	result, _ := ioutil.ReadAll(response.Body)
 	defer response.Body.Close()
 	if strings.Contains(response.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(string(result), *m) {
 		return PostBufferFile(path, name, file, fileName, extends...)
@@ -208,6 +210,7 @@ func PostBufferFile(path, name string, file io.Reader, fileName string, extends 
 	return result, err
 }
 
+//PostPathFile
 /**
  * @param path,name string, file io.Reader,filePath string,params param,app App,domain string
  * @author struggler
@@ -266,7 +269,7 @@ func PostPathFile(path, name string, file io.Reader, filePath string, extends ..
 	return responseByte, err
 }
 
-func PostBufferFileWithField(path, name string, file io.Reader, fileName string, fields map[string]string,extends ...interface{}) ([]byte, error) {
+func PostBufferFileWithField(path, name string, file io.Reader, fileName string, fields map[string]string, extends ...interface{}) ([]byte, error) {
 	var m *App
 	domain := domain
 	params := Query{}
@@ -320,7 +323,7 @@ func PostBufferFileWithField(path, name string, file io.Reader, fileName string,
 	}
 	defer response.Body.Close()
 	if strings.Contains(response.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(result.String(), *m) {
-		return PostBufferFileWithField(path, name, file, fileName,fields, extends...)
+		return PostBufferFileWithField(path, name, file, fileName, fields, extends...)
 	}
-	return  result.Bytes(),nil
+	return result.Bytes(), nil
 }
