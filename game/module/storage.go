@@ -1,8 +1,6 @@
 package module
 
 import (
-	"encoding/json"
-
 	"github.com/strugglerx/wechat/utils"
 )
 
@@ -26,45 +24,21 @@ func (a *Storage) Init(app utils.App) *Storage {
 
 //RemoveUserStorage 删除已经上报到微信的key-value数据
 //https://developers.weixin.qq.com/minigame/dev/api-backend/open-api/data/storage.removeUserStorage.html
-func (a *Storage) RemoveUserStorage(body []byte) (interface{}, error) {
-	var result interface{}
+func (a *Storage) RemoveUserStorage(body []byte) (utils.Response, error) {
 	response, err := utils.PostBody("/wxa/remove_user_storage", body, a.App)
-	if err != nil {
-		return result, err
-	}
-	err = json.Unmarshal(response, &result)
-	if err != nil {
-		return result, err
-	}
-	return result, nil
+	return response, err
 }
 
 //SetUserInteractiveData 删除已经上报到微信的key-value数据
 //https://developers.weixin.qq.com/minigame/dev/api-backend/open-api/data/storage.setUserInteractiveData.html
-func (a *Storage) SetUserInteractiveData(body []byte) (interface{}, error) {
-	var result interface{}
+func (a *Storage) SetUserInteractiveData(body []byte) (utils.Response, error) {
 	response, err := utils.PostBody("/wxa/setuserinteractivedata", body, a.App)
-	if err != nil {
-		return result, err
-	}
-	err = json.Unmarshal(response, &result)
-	if err != nil {
-		return result, err
-	}
-	return result, nil
+	return response, err
 }
 
 //SetUserStorage 删除已经上报到微信的key-value数据
 //https://developers.weixin.qq.com/minigame/dev/api-backend/open-api/data/storage.setUserStorage.html
-func (a *Storage) SetUserStorage(body []byte) (interface{}, error) {
-	var result interface{}
+func (a *Storage) SetUserStorage(body []byte) (utils.Response, error) {
 	response, err := utils.PostBody("/wxa/set_user_storage", body, a.App)
-	if err != nil {
-		return result, err
-	}
-	err = json.Unmarshal(response, &result)
-	if err != nil {
-		return result, err
-	}
-	return result, nil
+	return response, err
 }

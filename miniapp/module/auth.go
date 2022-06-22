@@ -1,8 +1,8 @@
 package module
 
 import (
-	"encoding/json"
 	"errors"
+
 	"github.com/strugglerx/wechat/utils"
 )
 
@@ -26,9 +26,8 @@ func (a *Auth) Init(app utils.App) *Auth {
 
 //Code2Session 登录凭证校验。通过 wx.login 接口获得临时登录凭证 code 后传到开发者服务器调用此接口完成登录流程。更多使用方法详见 小程序登录。
 //https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/login/auth.code2Session.html
-func (a *Auth) Code2Session(code string) (User, error) {
+func (a *Auth) Code2Session(code string) (Session, error) {
 	var result Session
-	user := User{}
 	params := utils.Query{
 		"appid":      a.App.GetConfig().Appid,
 		"secret":     a.App.GetConfig().Secret,
@@ -37,31 +36,30 @@ func (a *Auth) Code2Session(code string) (User, error) {
 	}
 	response, err := utils.Get("/sns/jscode2session", params)
 	if err != nil {
-		return user, err
+		return result, err
 	}
-	err = json.Unmarshal(response, &result)
+	err = response.Unmarshal(&result)
 	if err != nil {
-		return user, err
+		return result, err
 	}
 	if result.Errcode == 0 {
-		user := User{Session: result.SessionKey, Openid: result.Openid, Appid: a.App.GetConfig().Appid, Unionid: result.Unionid, Status: true}
-		return user, nil
+		return result, nil
 	}
-	return user, errors.New(string(response))
+	return result, errors.New(result.ErrMsg)
 }
 
 //getPaidUnionId 用户支付完成后，获取该用户的 UnionId，无需用户授权。本接口支持第三方平台代理查询。
 //https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/user-info/auth.getPaidUnionId.html
-func (a *Auth) GetPaidUnionId(openid string) (unionId string,err error) {
+func (a *Auth) GetPaidUnionId(openid string) (unionId string, err error) {
 	var result Session
 	params := utils.Query{
-		"openid":      openid,
+		"openid": openid,
 	}
-	response, err := utils.Get("/wxa/getpaidunionid", params,a.App)
+	response, err := utils.Get("/wxa/getpaidunionid", params, a.App)
 	if err != nil {
 		return unionId, err
 	}
-	err = json.Unmarshal(response, &result)
+	err = response.Unmarshal(&result)
 	if err != nil {
 		return unionId, err
 	}

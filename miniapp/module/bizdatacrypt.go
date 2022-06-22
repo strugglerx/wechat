@@ -36,9 +36,7 @@ func (e showError) Error() string {
 }
 
 // Decrypt Weixin APP's AES Data
-// If isJSON is true, Decrypt return JSON type.
-// If isJSON is false, Decrypt return map type.
-func (wxCrypt *WxBizDataCrypt) Decrypt(encryptedData string, iv string, isJSON bool) (interface{}, error) {
+func (wxCrypt *WxBizDataCrypt) Decrypt(encryptedData string, iv string) (map[string]interface{}, error) {
 	sessionKey := strings.Replace(strings.TrimSpace(wxCrypt.SessionKey), " ", "+", -1)
 	if len(sessionKey) != 24 {
 		return nil, showError{errorCode["illegalAesKey"], errors.New("sessionKey length is error")}
@@ -82,10 +80,6 @@ func (wxCrypt *WxBizDataCrypt) Decrypt(encryptedData string, iv string, isJSON b
 
 	if decrypted["watermark"].(map[string]interface{})["appid"] != wxCrypt.AppId {
 		return nil, showError{errorCode["illegalAppId"], errors.New("appId is not match")}
-	}
-
-	if isJSON {
-		return string(aesPlantText), nil
 	}
 
 	return decrypted, nil

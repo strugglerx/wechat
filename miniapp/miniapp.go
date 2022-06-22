@@ -1,6 +1,7 @@
 package miniapp
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/strugglerx/wechat/miniapp/module"
@@ -12,19 +13,14 @@ type App struct {
 	Appid  string
 	Secret string
 	Token  *utils.Token
-	Hook   utils.Hook
+	Verify bool        //检查Appid和Secret 是否是错的
+	Write  utils.Write //读
+	Read   utils.Read  //写
 }
 
 //New 新建wechat Hook 处理accesstoken的逻辑
-func New(appid, secret string, Hook ...utils.Hook) *App {
-	app := &App{
-		Appid:  appid,
-		Secret: secret,
-	}
-	if len(Hook) != 0 {
-		app.Hook = Hook[0]
-	}
-	if len(Hook) == 0 {
+func New(app *App) *App {
+	if app.Verify {
 		app.init()
 	}
 	return app
@@ -50,12 +46,19 @@ func (a *App) init() {
 		"grant_type": "client_credential",
 	})
 	a.Token.Token = gjson.Get(string(response), "access_token").String()
+
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+
 	if a.Token.Token == "" {
 		panic("Wechat Package [" + a.Appid + "] : \n" + string(response))
 	}
 	// Hook Logic
-	if a.Hook != nil {
-		a.Hook(a.Appid, a.Token.Token)
+	if a.Write != nil {
+		a.Write(a.Appid, a.Token.Token)
 	}
 	a.Token.UpdateTime = int(time.Now().Unix())
 }
@@ -68,7 +71,7 @@ func (a *App) GetAccessTokenSafety(reflush bool) string {
 //GetAccessToken 获取accessToken 不建议暴露使用
 func (a *App) GetAccessToken(reflush ...bool) *utils.Token {
 	//hook
-	if a.Hook != nil {
+	if a.Read != nil && a.Write != nil {
 		return a.GetAccessTokenWithHook(reflush...)
 	}
 	if a.Token == nil {
@@ -99,7 +102,7 @@ func (a *App) GetAccessToken(reflush ...bool) *utils.Token {
 
 //GetAccessTokenWithHook 获取accessToken 不建议暴露使用
 func (a *App) GetAccessTokenWithHook(reflush ...bool) *utils.Token {
-	token := a.Hook()
+	token := a.Read(a.Appid)
 	if token == nil {
 		token = &utils.Token{
 			Token:      "",
@@ -120,7 +123,7 @@ func (a *App) GetAccessTokenWithHook(reflush ...bool) *utils.Token {
 		response, _ := utils.Get("/cgi-bin/token", params)
 		token.Token = gjson.Get(string(response), "access_token").String()
 		token.UpdateTime = nowTime
-		a.Token = a.Hook(a.Appid, token.Token)
+		a.Token = a.Write(a.Appid, token.Token)
 		return token
 	} else {
 		return token
@@ -217,20 +220,7 @@ func (a *App) PhoneNumber() *module.PhoneNumber {
 	return module.PhoneNumberEntity.Init(a)
 }
 
-func (a *App) Get(path string, params utils.Query, withAccessToken ...bool) ([]byte, error) {
-	if len(withAccessToken) > 0 {
-		response, err := utils.Get(path, params, utils.ContextApp(a))
-		return response, err
-	}
-	response, err := utils.Get(path, params)
-	return response, err
-}
-
-func (a *App) PostBody(path string, body []byte, withAccessToken ...bool) ([]byte, error) {
-	if len(withAccessToken) > 0 {
-		response, err := utils.PostBody(path, body, utils.ContextApp(a))
-		return response, err
-	}
-	response, err := utils.PostBody(path, body)
-	return response, err
+//Custom 自定义
+func (a *App) Custom() *module.Custom {
+	return module.CustomEntity.Init(a)
 }

@@ -20,20 +20,28 @@ appid := "xx"
 secret := "xx"
 
 //sample
-app := miniapp.New(appid,secret)
+app := miniapp.App{Appid:  appid, Secret: secret,}
+
+//verify 
+app := New(&App{ Appid:  appid, Secret: secret, Verify: true,})
 
 //hook
 var cacheToken utils.Token
-app := New(appid,secret, func(appidAndAccessToken ...string) *utils.Token {
-    if contextToken,err := utils.ExtractAppidAndAccessToken(appidAndAccessToken...);err == nil{
-        // write token logic
-        cacheToken.Token = contextToken.Token
-        cacheToken.UpdateTime =  int(time.Now().Unix())
-        return &cacheToken
+app := &miniapp.App{
+    Appid:  appid,
+    Secret: secret,
+    Read: func(appid string) *utils.Token {return &cacheToken},
+    Write: func(appid, accessToken string) *utils.Token {
+            cacheToken.Token = accessToken
+            cacheToken.UpdateTime = int(time.Now().Unix())
+            return &cacheToken
+        },
     }
-    //read token logic
-    return &cacheToken
-    })
+	
+//custom 
+app.Custom.PostBody("/wxa/business/getuserphonenumber", []byte(`{
+        "code":"03c52dedef3306d529d53bb31452ec9a2f46880b2040cec9d760876e821f9429"
+    }`),true)
 
 //To Do
 ```

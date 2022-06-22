@@ -19,7 +19,9 @@ type Mp struct {
 	Secret      string
 	Token       *utils.Token
 	Oauth2Token *OauthToken
-	Hook        utils.Hook
+	Verify      bool        //检查Appid和Secret 是否是错的
+	Write       utils.Write //读
+	Read        utils.Read  //写
 }
 
 /**
@@ -29,15 +31,10 @@ type Mp struct {
  * @date 10:36 上午 2021/2/24
  * @return
  **/
-func New(appid, secret string, Hook ...utils.Hook) *Mp {
-	mp := &Mp{
-		Appid:  appid,
-		Secret: secret,
+func New(mp *Mp) *Mp {
+	if mp.Verify {
+		mp.init()
 	}
-	if len(Hook) != 0 {
-		mp.Hook = Hook[0]
-	}
-	//mp.init()
 	return mp
 }
 
@@ -67,12 +64,17 @@ func (m *Mp) init() {
 	}
 	responseString, _ := utils.Get("/cgi-bin/token", params)
 	m.Token.Token = gjson.Get(string(responseString), "access_token").String()
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println(err)
+		}
+	}()
 	if m.Token.Token == "" {
 		panic("WechatMp Package [" + m.Appid + "] : \n" + string(responseString))
 	}
 	// Hook Logic
-	if m.Hook != nil {
-		m.Hook(m.Appid, m.Token.Token)
+	if m.Write != nil {
+		m.Write(m.Appid, m.Token.Token)
 	}
 	m.Token.UpdateTime = int(time.Now().Unix())
 }
@@ -106,7 +108,7 @@ func (m *Mp) Session(code string) (User, error) {
 //获取accessToken
 func (m *Mp) GetAccessToken(reflush ...bool) *utils.Token {
 	//hook
-	if m.Hook != nil {
+	if m.Read != nil && m.Write != nil {
 		return m.GetAccessTokenWithHook(reflush...)
 	}
 	if m.Token == nil {
@@ -137,7 +139,7 @@ func (m *Mp) GetAccessToken(reflush ...bool) *utils.Token {
 
 //获取accessToken
 func (m *Mp) GetAccessTokenWithHook(reflush ...bool) *utils.Token {
-	token := m.Hook()
+	token := m.Read(m.Appid)
 	if token == nil {
 		token = &utils.Token{
 			Token:      "",
@@ -158,7 +160,7 @@ func (m *Mp) GetAccessTokenWithHook(reflush ...bool) *utils.Token {
 		response, _ := utils.Get("/cgi-bin/token", params)
 		token.Token = gjson.Get(string(response), "access_token").String()
 		token.UpdateTime = nowTime
-		m.Token = m.Hook(m.Appid, token.Token)
+		m.Token = m.Write(m.Appid, token.Token)
 		return token
 	} else {
 		return token
@@ -168,7 +170,7 @@ func (m *Mp) GetAccessTokenWithHook(reflush ...bool) *utils.Token {
 //获取微信服务器ip
 func (m *Mp) CallbackIp() (interface{}, error) {
 	//封装json post请求
-	responseString, err := utils.Get("/cgi-bin/getcallbackip", utils.ContextApp(m))
+	responseString, err := utils.Get("/cgi-bin/getcallbackip", m)
 	if err != nil {
 		return responseString, err
 	}
@@ -178,7 +180,7 @@ func (m *Mp) CallbackIp() (interface{}, error) {
 //设置菜单
 func (m *Mp) SetMenu(body []byte) (interface{}, error) {
 	var result TextResponse
-	responseByte, err := utils.PostBody("/cgi-bin/menu/create", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/menu/create", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -192,7 +194,7 @@ func (m *Mp) SetMenu(body []byte) (interface{}, error) {
 //获取普通菜单
 func (m *Mp) GetSelfMenu() (interface{}, error) {
 	var result interface{}
-	responseString, err := utils.Get("/cgi-bin/get_current_selfmenu_info", utils.ContextApp(m))
+	responseString, err := utils.Get("/cgi-bin/get_current_selfmenu_info", m)
 	if err != nil {
 		return result, err
 	}
@@ -202,7 +204,7 @@ func (m *Mp) GetSelfMenu() (interface{}, error) {
 //获取全部菜单(包括个性菜单)
 func (m *Mp) GetMenu() (interface{}, error) {
 	var result interface{}
-	responseString, err := utils.Get("/cgi-bin/menu/get", utils.ContextApp(m))
+	responseString, err := utils.Get("/cgi-bin/menu/get", m)
 	if err != nil {
 		return result, err
 	}
@@ -213,7 +215,7 @@ func (m *Mp) GetMenu() (interface{}, error) {
 func (m *Mp) RemoveMenu() (interface{}, error) {
 	var result interface{}
 	//封装json post请求
-	responseString, err := utils.Get("/cgi-bin/menu/delete", utils.ContextApp(m))
+	responseString, err := utils.Get("/cgi-bin/menu/delete", m)
 	if err != nil {
 		return result, err
 	}
@@ -223,7 +225,7 @@ func (m *Mp) RemoveMenu() (interface{}, error) {
 //设置个性化菜单
 func (m *Mp) SetStyleMenu(body []byte) (interface{}, error) {
 	var result TextResponse
-	responseByte, err := utils.PostBody("/cgi-bin/menu/addconditional", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/menu/addconditional", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -237,7 +239,7 @@ func (m *Mp) SetStyleMenu(body []byte) (interface{}, error) {
 //删除个性化菜单
 func (m *Mp) DelStyleMenu(body []byte) (interface{}, error) {
 	var result TextResponse
-	responseByte, err := utils.PostBody("/cgi-bin/menu/delconditional", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/menu/delconditional", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -251,7 +253,7 @@ func (m *Mp) DelStyleMenu(body []byte) (interface{}, error) {
 //测试个性化菜单
 func (m *Mp) TestStyleMenu(body []byte) (interface{}, error) {
 	var result TextResponse
-	responseByte, err := utils.PostBody("/cgi-bin/menu/trymatch", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/menu/trymatch", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -275,7 +277,7 @@ func (m *Mp) GetShortUrl(longUrl string) (string, error) {
 		LongUrl: longUrl,
 	}
 	bodyByte, _ := json.Marshal(bodyStruct)
-	responseByte, err := utils.PostBody("/cgi-bin/shorturl", bodyByte, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/shorturl", bodyByte, m)
 	if err != nil {
 		return "", err
 	}
@@ -294,7 +296,7 @@ func (m *Mp) GetShortUrl(longUrl string) (string, error) {
 func (m *Mp) GetReplyRules() (interface{}, error) {
 	var result interface{}
 	//封装json post请求
-	responseString, err := utils.Get("/cgi-bin/get_current_autoreply_info", utils.ContextApp(m))
+	responseString, err := utils.Get("/cgi-bin/get_current_autoreply_info", m)
 	if err != nil {
 		return result, err
 	}
@@ -312,7 +314,7 @@ func (m *Mp) SendTextMsg(content, openid string) int64 {
 	body.Touser = openid
 	body.Msgtype = "text"
 	body.Text.Content = content
-	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), m)
 	if err != nil {
 		return 1
 	}
@@ -325,7 +327,7 @@ func (m *Mp) SendImageMsg(mediaId, openid string) int64 {
 	body.Touser = openid
 	body.Msgtype = "image"
 	body.Image.MediaId = mediaId
-	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), m)
 	if err != nil {
 		return 1
 	}
@@ -338,7 +340,7 @@ func (m *Mp) SendVoiceMsg(mediaId, openid string) int64 {
 	body.Touser = openid
 	body.Msgtype = "voice"
 	body.Voice.MediaId = mediaId
-	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), m)
 	if err != nil {
 		return 1
 	}
@@ -354,7 +356,7 @@ func (m *Mp) SendVideoMsg(mediaId, openid, thumbMediaId, title, description stri
 	body.Video.ThumbMediaId = thumbMediaId
 	body.Video.Title = title
 	body.Video.Description = description
-	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), m)
 	if err != nil {
 		return 1
 	}
@@ -371,7 +373,7 @@ func (m *Mp) SendMusicMsg(openid, thumbMediaId, musicurl, hqmusicurl, title, des
 	body.Music.ThumbMediaId = thumbMediaId
 	body.Music.Title = title
 	body.Music.Description = description
-	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), m)
 	if err != nil {
 		return 1
 	}
@@ -396,7 +398,7 @@ func (m *Mp) SendNewsMsg(openid, title, description, url_, picurl string) int64 
 			Picurl:      picurl,
 		},
 	}
-	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), m)
 	if err != nil {
 		return 1
 	}
@@ -409,7 +411,7 @@ func (m *Mp) SendMpnewsMsg(openid, mediaid string) int64 {
 	body.Touser = openid
 	body.Msgtype = "mpnews"
 	body.Mpnews.MediaId = mediaid
-	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), m)
 	if err != nil {
 		return 1
 	}
@@ -422,7 +424,7 @@ func (m *Mp) SendCommandMsg(openid, command string) int64 {
 	var body SendCommand
 	body.Touser = openid
 	body.Command = command
-	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), m)
 	if err != nil {
 		return 1
 	}
@@ -438,7 +440,7 @@ func (m *Mp) SendMiniProgramMsg(openid, thumbMediaId, pagepath, appid, title str
 	body.Miniprogrampage.Appid = appid
 	body.Miniprogrampage.Pagepath = pagepath
 	body.Miniprogrampage.ThumbMediaId = thumbMediaId
-	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/custom/send", utils.JsonToByte(body), m)
 	if err != nil {
 		return 1
 	}
@@ -456,7 +458,7 @@ func (m *Mp) UploadTempMediaBinary(file io.Reader, fileName string, type_ string
 	var result interface{}
 	responseByte, err := utils.PostBufferFile("/cgi-bin/media/upload", "media", file, fileName, utils.Query{
 		"type": type_,
-	}, utils.ContextApp(m))
+	}, m)
 	if err != nil {
 		return nil, err
 	}
@@ -479,7 +481,7 @@ func (m *Mp) UploadTempMedia(fileUrlPath, type_ string) (string, error) {
 	defer fileData.Close()
 	responseByte, err := utils.PostPathFile("/cgi-bin/media/upload", "media", fileData, fileUrlPath, utils.Query{
 		"type": type_,
-	}, utils.ContextApp(m))
+	}, m)
 	if err != nil {
 		return "", err
 	}
@@ -491,7 +493,7 @@ func (m *Mp) UploadTempMedia(fileUrlPath, type_ string) (string, error) {
 func (m *Mp) GetTempMedia(mediaId string) ([]byte, error) {
 	responseString, err := utils.Get("/cgi-bin/media/get", utils.Query{
 		"media_id": mediaId,
-	}, utils.ContextApp(m))
+	}, m)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -501,7 +503,7 @@ func (m *Mp) GetTempMedia(mediaId string) ([]byte, error) {
 //新增永久素材
 func (m *Mp) SetForeverNews(body []byte) (interface{}, error) {
 	var result TextResponse
-	responseByte, err := utils.PostBody("/cgi-bin/material/add_news", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/material/add_news", body, m)
 	err = json.Unmarshal(responseByte, &result)
 	if err != nil {
 		return result, err
@@ -521,7 +523,7 @@ func (m *Mp) UploadForeverMedia(fileUrlPath, type_ string) (string, error) {
 	defer fileData.Close()
 	responseByte, err := utils.PostPathFile("/cgi-bin/material/add_material", "media", fileData, fileUrlPath, utils.Query{
 		"type": type_,
-	}, utils.ContextApp(m))
+	}, m)
 	if err != nil {
 		return "", err
 	}
@@ -533,7 +535,7 @@ func (m *Mp) UploadForeverMedia(fileUrlPath, type_ string) (string, error) {
 func (m *Mp) GetForeverMedia(mediaId string) ([]byte, error) {
 	responseString, err := utils.Get("/cgi-bin/material/get_material", utils.Query{
 		"media_id": mediaId,
-	}, utils.ContextApp(m))
+	}, m)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -546,7 +548,7 @@ func (m *Mp) GetForeverMedia(mediaId string) ([]byte, error) {
 //}
 func (m *Mp) DelForeverMedia(body []byte) (interface{}, error) {
 	var result TextResponse
-	responseByte, err := utils.PostBody("/cgi-bin/material/del_material", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/material/del_material", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -559,7 +561,7 @@ func (m *Mp) DelForeverMedia(body []byte) (interface{}, error) {
 
 //获取永久素材总数
 func (m *Mp) GetForeverMediaCount() ([]byte, error) {
-	responseString, err := utils.Get("/cgi-bin/material/get_materialcount", utils.ContextApp(m))
+	responseString, err := utils.Get("/cgi-bin/material/get_materialcount", m)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -574,7 +576,7 @@ func (m *Mp) GetForeverMediaCount() ([]byte, error) {
 //}
 func (m *Mp) GetForeverMediaList(body []byte) (interface{}, error) {
 	var result interface{}
-	responseByte, err := utils.PostBody("/cgi-bin/material/batchget_material", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/material/batchget_material", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -588,7 +590,7 @@ func (m *Mp) GetForeverMediaList(body []byte) (interface{}, error) {
 //上传图片
 func (m *Mp) UploadImg(file io.Reader, fileName string) (interface{}, error) {
 	var result interface{}
-	responseByte, err := utils.PostBufferFile("/cgi-bin/media/uploadimg", "media", file, fileName, utils.ContextApp(m))
+	responseByte, err := utils.PostBufferFile("/cgi-bin/media/uploadimg", "media", file, fileName, m)
 	if err != nil {
 		return nil, err
 	}
@@ -632,7 +634,7 @@ func (m *Mp) UploadImg(file io.Reader, fileName string) (interface{}, error) {
 ]
 }*/
 func (m *Mp) CreateNews(news News) int64 {
-	responseByte, err := utils.PostBody("/cgi-bin/media/uploadnews", utils.JsonToByte(news), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/media/uploadnews", utils.JsonToByte(news), m)
 	if err != nil {
 		return 1
 	}
@@ -645,7 +647,7 @@ func (m *Mp) CreateNews(news News) int64 {
  **/
 
 func (m *Mp) PushServerNews(news ServerSendNews) int64 {
-	responseByte, err := utils.PostBody("/cgi-bin/message/mass/send", utils.JsonToByte(news), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/mass/send", utils.JsonToByte(news), m)
 	if err != nil {
 		return 1
 	}
@@ -653,7 +655,7 @@ func (m *Mp) PushServerNews(news ServerSendNews) int64 {
 }
 
 func (m *Mp) PushServerText(news ServerSendText) int64 {
-	responseByte, err := utils.PostBody("/cgi-bin/message/mass/send", utils.JsonToByte(news), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/mass/send", utils.JsonToByte(news), m)
 	if err != nil {
 		return 1
 	}
@@ -661,7 +663,7 @@ func (m *Mp) PushServerText(news ServerSendText) int64 {
 }
 
 func (m *Mp) PushServerVoice(news ServerSendVoice) int64 {
-	responseByte, err := utils.PostBody("/cgi-bin/message/mass/send", utils.JsonToByte(news), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/mass/send", utils.JsonToByte(news), m)
 	if err != nil {
 		return 1
 	}
@@ -669,7 +671,7 @@ func (m *Mp) PushServerVoice(news ServerSendVoice) int64 {
 }
 
 func (m *Mp) PushServerImage(news ServerSendImage) int64 {
-	responseByte, err := utils.PostBody("/cgi-bin/message/mass/send", utils.JsonToByte(news), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/mass/send", utils.JsonToByte(news), m)
 	if err != nil {
 		return 1
 	}
@@ -681,7 +683,7 @@ func (m *Mp) PushDel(msgId, articleIdx int) int64 {
 	var body DelPush
 	body.MsgID = msgId
 	body.ArticleIdx = articleIdx
-	responseByte, err := utils.PostBody("/cgi-bin/message/mass/delete", utils.JsonToByte(body), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/mass/delete", utils.JsonToByte(body), m)
 	if err != nil {
 		return 1
 	}
@@ -699,7 +701,7 @@ func (m *Mp) SendPreviewTextMsg(content, openid string) int64 {
 	body.Touser = openid
 	body.Msgtype = "text"
 	body.Text.Content = content
-	responseByte, err := utils.PostBody("/cgi-bin/message/mass/preview", utils.JsonToByte(body), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/mass/preview", utils.JsonToByte(body), m)
 	if err != nil {
 		return 1
 	}
@@ -712,7 +714,7 @@ func (m *Mp) SendPreviewImageMsg(mediaId, openid string) int64 {
 	body.Touser = openid
 	body.Msgtype = "image"
 	body.Image.MediaId = mediaId
-	responseByte, err := utils.PostBody("/cgi-bin/message/mass/preview", utils.JsonToByte(body), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/mass/preview", utils.JsonToByte(body), m)
 	if err != nil {
 		return 1
 	}
@@ -727,7 +729,7 @@ func (m *Mp) SendPreviewImageMsg(mediaId, openid string) int64 {
 //内容安全检查
 func (m *Mp) CheckText(body []byte) (interface{}, error) {
 	var result TextResponse
-	responseByte, err := utils.PostBody("/a/msg_sec_check", utils.JsonToByte(body), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/a/msg_sec_check", utils.JsonToByte(body), m)
 	if err != nil {
 		return result, err
 	}
@@ -740,7 +742,7 @@ func (m *Mp) CheckText(body []byte) (interface{}, error) {
 
 func (m *Mp) CheckImg(file io.Reader, fileName string) (interface{}, error) {
 	var result interface{}
-	responseByte, err := utils.PostBufferFile("/a/img_sec_check", "media", file, fileName, utils.ContextApp(m))
+	responseByte, err := utils.PostBufferFile("/a/img_sec_check", "media", file, fileName, m)
 	if err != nil {
 		return nil, err
 	}
@@ -764,7 +766,7 @@ func (m *Mp) CheckImg(file io.Reader, fileName string) (interface{}, error) {
 //}
 func (m *Mp) SetIndustry(body []byte) (interface{}, error) {
 	var result interface{}
-	responseByte, err := utils.PostBody("/cgi-bin/template/api_set_industry", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/template/api_set_industry", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -778,7 +780,7 @@ func (m *Mp) SetIndustry(body []byte) (interface{}, error) {
 //获取设置的行业信息
 func (m *Mp) GetIndustry() (interface{}, error) {
 	var result interface{}
-	responseString, err := utils.Get("/cgi-bin/template/get_industry", utils.ContextApp(m))
+	responseString, err := utils.Get("/cgi-bin/template/get_industry", m)
 	if err != nil {
 		return result, err
 	}
@@ -795,7 +797,7 @@ func (m *Mp) GetIndustry() (interface{}, error) {
 //}
 func (m *Mp) GetTemplateId(body []byte) (interface{}, error) {
 	var result TextResponse
-	responseByte, err := utils.PostBody("/cgi-bin/template/api_add_template", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/template/api_add_template", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -809,7 +811,7 @@ func (m *Mp) GetTemplateId(body []byte) (interface{}, error) {
 //获取模板列表
 func (m *Mp) GetTemplateList() (interface{}, error) {
 	var result interface{}
-	responseString, err := utils.Get("/cgi-bin/template/get_all_private_template", utils.ContextApp(m))
+	responseString, err := utils.Get("/cgi-bin/template/get_all_private_template", m)
 	if err != nil {
 		return result, err
 	}
@@ -826,7 +828,7 @@ func (m *Mp) GetTemplateList() (interface{}, error) {
 //}
 func (m *Mp) DelTemplateId(body []byte) (interface{}, error) {
 	var result TextResponse
-	responseByte, err := utils.PostBody("/cgi-bin/template/del_private_template", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/template/del_private_template", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -873,7 +875,7 @@ func (m *Mp) DelTemplateId(body []byte) (interface{}, error) {
 */
 func (m *Mp) PushTemplate(body []byte) (interface{}, error) {
 	var result interface{}
-	responseByte, err := utils.PostBody("/cgi-bin/message/template/send", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/template/send", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -911,7 +913,7 @@ func (m *Mp) PushTemplate(body []byte) (interface{}, error) {
 */
 func (m *Mp) PushSubscribeTemplate(body []byte) (interface{}, error) {
 	var result interface{}
-	responseByte, err := utils.PostBody("/cgi-bin/message/template/subscribe", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/message/template/subscribe", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -968,7 +970,7 @@ func (m *Mp) CreateForeverAcode(actionName, scene string) (interface{}, error) {
 		}
 
 	}
-	responseByte, err := utils.PostBody("/cgi-bin/qrcode/create", utils.JsonToByte(params), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/qrcode/create", utils.JsonToByte(params), m)
 	if err != nil {
 		return result, err
 	}
@@ -1021,7 +1023,7 @@ func (m *Mp) CreateMoreAcode(actionName, scene string) (interface{}, error) {
 			},
 		}
 	}
-	responseByte, err := utils.PostBody("/cgi-bin/qrcode/create", utils.JsonToByte(params), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/qrcode/create", utils.JsonToByte(params), m)
 	if err != nil {
 		return result, err
 	}
@@ -1057,7 +1059,7 @@ func (m *Mp) GetTicketAcode(ticket string) (interface{}, error) {
 //{   "tag" : {     "name" : "广东"//标签名   } }
 func (m *Mp) InsertTags(body []byte) (interface{}, error) {
 	var result interface{}
-	responseByte, err := utils.PostBody("/cgi-bin/tags/create", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/tags/create", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -1071,7 +1073,7 @@ func (m *Mp) InsertTags(body []byte) (interface{}, error) {
 //获取所有tag
 func (m *Mp) GetTags() (interface{}, error) {
 	var result interface{}
-	responseString, err := utils.Get("/cgi-bin/tags/get", utils.ContextApp(m))
+	responseString, err := utils.Get("/cgi-bin/tags/get", m)
 	if err != nil {
 		return result, err
 	}
@@ -1086,7 +1088,7 @@ func (m *Mp) GetTags() (interface{}, error) {
 //{   "tag" : {     "id" : 134,     "name" : "广东人"   } }
 func (m *Mp) UpdateTags(body []byte) (interface{}, error) {
 	var result interface{}
-	responseByte, err := utils.PostBody("/cgi-bin/tags/update", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/tags/update", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -1101,7 +1103,7 @@ func (m *Mp) UpdateTags(body []byte) (interface{}, error) {
 //{   "tag":{        "id" : 134   } }
 func (m *Mp) RemoveTags(body []byte) (interface{}, error) {
 	var result interface{}
-	responseByte, err := utils.PostBody("/cgi-bin/tags/delete", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/tags/delete", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -1116,7 +1118,7 @@ func (m *Mp) RemoveTags(body []byte) (interface{}, error) {
 //{   "tagid" : 134,   "next_openid":""//第一个拉取的OPENID，不填默认从头开始拉取 }
 func (m *Mp) GetTagsUser(body []byte) (UserListResponse, error) {
 	var result UserListResponse
-	responseByte, err := utils.PostBody("/cgi-bin/user/tag/get", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/user/tag/get", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -1136,7 +1138,7 @@ func (m *Mp) GetTagsUser(body []byte) (UserListResponse, error) {
 // }
 func (m *Mp) SetTagsUser(body []byte) (interface{}, error) {
 	var result interface{}
-	responseByte, err := utils.PostBody("/cgi-bin/tags/members/batchtagging", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/tags/members/batchtagging", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -1156,7 +1158,7 @@ func (m *Mp) SetTagsUser(body []byte) (interface{}, error) {
 //}
 func (m *Mp) CancelTagsUser(body []byte) (interface{}, error) {
 	var result interface{}
-	responseByte, err := utils.PostBody("/cgi-bin/tags/members/batchuntagging", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/tags/members/batchuntagging", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -1171,7 +1173,7 @@ func (m *Mp) CancelTagsUser(body []byte) (interface{}, error) {
 //{   "openid" : "ocYxcuBt0mRugKZ7tGAHPnUaOW7Y" }
 func (m *Mp) GetTagsOneUser(body []byte) (interface{}, error) {
 	var result interface{}
-	responseByte, err := utils.PostBody("/cgi-bin/tags/getidlist", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/tags/getidlist", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -1186,7 +1188,7 @@ func (m *Mp) GetTagsOneUser(body []byte) (interface{}, error) {
 func (m *Mp) SetUserRemark(openId, remark string) (interface{}, error) {
 	var result interface{}
 	bodyStruct := Remark{Openid: openId, Remark: remark}
-	responseByte, err := utils.PostBody("/cgi-bin/users/info/updateremark", utils.JsonToByte(bodyStruct), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/users/info/updateremark", utils.JsonToByte(bodyStruct), m)
 	if err != nil {
 		return result, err
 	}
@@ -1202,7 +1204,7 @@ func (m *Mp) GetUserList(nextOpenId string) (UserListResponse, error) {
 	var result UserListResponse
 	responseString, err := utils.Get("/cgi-bin/user/get", utils.Query{
 		"next_openid": nextOpenId,
-	}, utils.ContextApp(m))
+	}, m)
 	if err != nil {
 		return result, err
 	}
@@ -1218,7 +1220,7 @@ func (m *Mp) GetUserDetail(openId string) (string, error) {
 	responseString, err := utils.Get("/cgi-bin/user/info", utils.Query{
 		"openid": openId,
 		"lang":   "zh_CN",
-	}, utils.ContextApp(m))
+	}, m)
 	if err != nil {
 		return "", err
 	}
@@ -1240,7 +1242,7 @@ func (m *Mp) GetUserDetail(openId string) (string, error) {
 //}
 func (m *Mp) GetUsersDetail(body []byte) (interface{}, error) {
 	var result interface{}
-	responseByte, err := utils.PostBody("/cgi-bin/user/info/batchget", body, utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/user/info/batchget", body, m)
 	if err != nil {
 		return result, err
 	}
@@ -1266,7 +1268,7 @@ func (m *Mp) GetCommentList(msgDataId, index, begin, count, type_ int) (interfac
 		Count:     count,
 		Type:      type_,
 	}
-	responseByte, err := utils.PostBody("/cgi-bin/user/info/batchget", utils.JsonToByte(bodyStruct), utils.ContextApp(m))
+	responseByte, err := utils.PostBody("/cgi-bin/user/info/batchget", utils.JsonToByte(bodyStruct), m)
 	if err != nil {
 		return result, err
 	}
@@ -1280,7 +1282,7 @@ func (m *Mp) GetCommentList(msgDataId, index, begin, count, type_ int) (interfac
 //Get
 func (a *Mp) Get(path string, params utils.Query, withAccessToken ...bool) ([]byte, error) {
 	if len(withAccessToken) > 0 {
-		response, err := utils.Get(path, params, utils.ContextApp(a))
+		response, err := utils.Get(path, params, a)
 		return response, err
 	}
 	response, err := utils.Get(path, params)
@@ -1290,7 +1292,7 @@ func (a *Mp) Get(path string, params utils.Query, withAccessToken ...bool) ([]by
 //Post
 func (a *Mp) PostBody(path string, body []byte, withAccessToken ...bool) ([]byte, error) {
 	if len(withAccessToken) > 0 {
-		response, err := utils.PostBody(path, body, utils.ContextApp(a))
+		response, err := utils.PostBody(path, body, a)
 		return response, err
 	}
 	response, err := utils.PostBody(path, body)

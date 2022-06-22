@@ -1,8 +1,6 @@
 package module
 
 import (
-	"encoding/json"
-
 	"github.com/strugglerx/wechat/utils"
 )
 
@@ -26,15 +24,7 @@ func (a *DataAnalysis) Init(app utils.App) *DataAnalysis {
 
 //GetGameAnalysisData 获取小游戏分析数据。
 //https://developers.weixin.qq.com/minigame/dev/api-backend/open-api/data-analysis/analysis.getGameAnalysisData.html
-func (a *DataAnalysis) GetGameAnalysisData(body []byte) (interface{}, error) {
-	var result interface{}
+func (a *DataAnalysis) GetGameAnalysisData(body []byte) (utils.Response, error) {
 	response, err := utils.PostBody("/datacube/getgameanalysisdata", body, a.App)
-	if err != nil {
-		return result, err
-	}
-	err = json.Unmarshal(response, &result)
-	if err != nil {
-		return result, err
-	}
-	return result, nil
+	return response, err
 }

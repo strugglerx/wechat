@@ -23,11 +23,11 @@ func (a *DecodedData) Init(app utils.App) *DecodedData {
 }
 
 //DecodeCryptoData 解密数据
-func (a *DecodedData) DecodeCryptoData(sessionKey, encryptedData, iv string) (interface{}, error) {
+func (a *DecodedData) DecodeCryptoData(sessionKey, encryptedData, iv string) (utils.MapInterface, error) {
 	wxCrypt := WxBizDataCrypt{
 		AppId:      a.App.GetConfig().Appid,
 		SessionKey: sessionKey,
 	}
-	result, err := wxCrypt.Decrypt(encryptedData, iv, true)
+	result, err := wxCrypt.Decrypt(encryptedData, iv)
 	return result, err
 }

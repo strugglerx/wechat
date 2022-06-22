@@ -4,18 +4,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/tidwall/gjson"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
-
-func ContextApp(a App) App {
-	return a
-}
 
 // ReduceUrl 合并url
 func ReduceUrl(uri string, params Query) (string, error) {
@@ -37,23 +33,20 @@ func ReduceUrl(uri string, params Query) (string, error) {
 }
 
 // checkTokenExpired 判断access_token 是否过期
-func checkTokenExpired(responseString string, m App) bool {
-	if value, ok := expiredToken[gjson.Get(responseString, "errcode").String()]; ok {
+func checkTokenExpired(errcode int, m App) bool {
+	if value, ok := expiredToken[strconv.Itoa(errcode)]; ok {
 		m.GetAccessToken(true)
 		return value
 	}
 	return false
 }
 
-// ExtractAppidAndAccessToken 提取appid 和 accessToken
-func ExtractAppidAndAccessToken(appidAndAccessToken ...string) (ContextToken, error) {
-	if len(appidAndAccessToken) == 2 {
-		return ContextToken{
-			Appid: appidAndAccessToken[0],
-			Token: appidAndAccessToken[1],
-		}, nil
-	}
-	return ContextToken{}, errors.New("appidAndAccessToken length must 2")
+func checkJsonResponse(resp *http.Response) bool {
+	return strings.Contains(resp.Header.Get("Content-Type"), "application/json")
+}
+
+func checkCodeError(errcode int) bool {
+	return errcode != 0
 }
 
 // FetchSource 获取资源
@@ -84,7 +77,7 @@ func FetchSource(uri string) []byte {
  * @date 10:52 下午 2021/2/23
  * @return []byte,error
  **/
-func Get(path string, extends ...interface{}) ([]byte, error) {
+func Get(path string, extends ...interface{}) (Response, error) {
 	var m *App
 	domain := domain
 	params := Query{}
@@ -100,22 +93,32 @@ func Get(path string, extends ...interface{}) ([]byte, error) {
 		}
 	}
 	uri, _ := ReduceUrl(fmt.Sprintf("%s%s", domain, path), params)
-	var responseByte []byte
-	response, err := http.Get(uri)
-	defer response.Body.Close()
+	var respByte Response
+	resp, err := http.Get(uri)
+	defer resp.Body.Close()
 	if err != nil {
-		return responseByte, err
+		return nil, err
 	}
 
-	responseByte, err = ioutil.ReadAll(response.Body)
+	respByte, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return responseByte, err
+		return nil, err
 	}
-	responseString := string(responseByte)
-	if strings.Contains(response.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(responseString, *m) {
-		return Get(path, extends...)
+
+	if checkJsonResponse(resp) && m != nil {
+		jsonResponse := JsonResponse{}
+		err := respByte.Unmarshal(&jsonResponse)
+		if err != nil {
+			return nil, err
+		}
+		if checkTokenExpired(jsonResponse.Errcode, *m) {
+			return Get(path, extends...)
+		}
+		if checkCodeError(jsonResponse.Errcode) {
+			return nil, showError{errorCode: jsonResponse.Errcode, errorMsg: errors.New(jsonResponse.ErrMsg)}
+		}
 	}
-	return responseByte, nil
+	return respByte, nil
 }
 
 //PostBody
@@ -126,7 +129,7 @@ func Get(path string, extends ...interface{}) ([]byte, error) {
  * @date 10:52 下午 2021/2/23
  * @return string,error
  **/
-func PostBody(path string, body []byte, extends ...interface{}) ([]byte, error) {
+func PostBody(path string, body []byte, extends ...interface{}) (Response, error) {
 	var m *App
 	domain := domain
 	params := Query{}
@@ -142,19 +145,30 @@ func PostBody(path string, body []byte, extends ...interface{}) ([]byte, error) 
 		}
 	}
 	uri, _ := ReduceUrl(fmt.Sprintf("%s%s", domain, path), params)
-	response, err := http.Post(uri, "", bytes.NewReader(body))
-	defer response.Body.Close()
+	resp, err := http.Post(uri, "", bytes.NewReader(body))
+	defer resp.Body.Close()
 	if err != nil {
-		return []byte(""), err
+		return nil, err
 	}
-	responseByte, err := ioutil.ReadAll(response.Body)
+	var respByte Response
+	respByte, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return []byte(""), err
+		return nil, err
 	}
-	if strings.Contains(response.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(string(responseByte), *m) {
-		return PostBody(path, body, extends...)
+	if checkJsonResponse(resp) && m != nil {
+		jsonResponse := JsonResponse{}
+		err := respByte.Unmarshal(&jsonResponse)
+		if err != nil {
+			return nil, err
+		}
+		if checkTokenExpired(jsonResponse.Errcode, *m) {
+			return PostBody(path, body, extends...)
+		}
+		if checkCodeError(jsonResponse.Errcode) {
+			return nil, showError{errorCode: jsonResponse.Errcode, errorMsg: errors.New(jsonResponse.ErrMsg)}
+		}
 	}
-	return responseByte, nil
+	return respByte, nil
 }
 
 //PostBufferFile
@@ -165,7 +179,7 @@ func PostBody(path string, body []byte, extends ...interface{}) ([]byte, error) 
  * @date 10:52 下午 2021/2/23
  * @return string,error
  **/
-func PostBufferFile(path, name string, file io.Reader, fileName string, extends ...interface{}) ([]byte, error) {
+func PostBufferFile(path, name string, file io.Reader, fileName string, extends ...interface{}) (Response, error) {
 	var m *App
 	domain := domain
 	params := Query{}
@@ -198,16 +212,30 @@ func PostBufferFile(path, name string, file io.Reader, fileName string, extends 
 	}
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	client := &http.Client{}
-	response, err := client.Do(request)
+	resp, err := client.Do(request)
 	if err != nil {
 		return nil, err
 	}
-	result, _ := ioutil.ReadAll(response.Body)
-	defer response.Body.Close()
-	if strings.Contains(response.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(string(result), *m) {
-		return PostBufferFile(path, name, file, fileName, extends...)
+	var respByte Response
+	respByte, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
 	}
-	return result, err
+	defer resp.Body.Close()
+	if checkJsonResponse(resp) && m != nil {
+		jsonResponse := JsonResponse{}
+		err := respByte.Unmarshal(&jsonResponse)
+		if err != nil {
+			return nil, err
+		}
+		if checkTokenExpired(jsonResponse.Errcode, *m) {
+			return PostBufferFile(path, name, file, fileName, extends...)
+		}
+		if checkCodeError(jsonResponse.Errcode) {
+			return nil, showError{errorCode: jsonResponse.Errcode, errorMsg: errors.New(jsonResponse.ErrMsg)}
+		}
+	}
+	return respByte, err
 }
 
 //PostPathFile
@@ -218,7 +246,7 @@ func PostBufferFile(path, name string, file io.Reader, fileName string, extends 
  * @date 10:52 下午 2021/2/23
  * @return string,error
  **/
-func PostPathFile(path, name string, file io.Reader, filePath string, extends ...interface{}) ([]byte, error) {
+func PostPathFile(path, name string, file io.Reader, filePath string, extends ...interface{}) (Response, error) {
 	var m *App
 	domain := domain
 	params := Query{}
@@ -262,11 +290,22 @@ func PostPathFile(path, name string, file io.Reader, filePath string, extends ..
 		return nil, err
 	}
 	defer resp.Body.Close()
-	responseByte := responseBody.Bytes()
-	if strings.Contains(resp.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(string(responseByte), *m) {
-		return PostPathFile(path, name, file, filePath, extends...)
+	var respByte Response
+	respByte = responseBody.Bytes()
+	if checkJsonResponse(resp) && m != nil {
+		jsonResponse := JsonResponse{}
+		err := respByte.Unmarshal(&jsonResponse)
+		if err != nil {
+			return nil, err
+		}
+		if checkTokenExpired(jsonResponse.Errcode, *m) {
+			return PostPathFile(path, name, file, filePath, extends...)
+		}
+		if checkCodeError(jsonResponse.Errcode) {
+			return nil, showError{errorCode: jsonResponse.Errcode, errorMsg: errors.New(jsonResponse.ErrMsg)}
+		}
 	}
-	return responseByte, err
+	return respByte, err
 }
 
 func PostBufferFileWithField(path, name string, file io.Reader, fileName string, fields map[string]string, extends ...interface{}) ([]byte, error) {
@@ -310,20 +349,33 @@ func PostBufferFileWithField(path, name string, file io.Reader, fileName string,
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	//request.Header.Set("header", "header")
 	client := &http.Client{}
-	response, err := client.Do(request)
+	resp, err := client.Do(request)
 
 	if err != nil {
 		return nil, err
 	}
 
-	result := &bytes.Buffer{}
-	_, err = result.ReadFrom(response.Body)
+	buf := &bytes.Buffer{}
+	_, err = buf.ReadFrom(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
-	if strings.Contains(response.Header.Get("Content-Type"), "application/json") && m != nil && checkTokenExpired(result.String(), *m) {
-		return PostBufferFileWithField(path, name, file, fileName, fields, extends...)
+	defer resp.Body.Close()
+	var respByte Response
+
+	respByte = buf.Bytes()
+	if checkJsonResponse(resp) && m != nil {
+		jsonResponse := JsonResponse{}
+		err := respByte.Unmarshal(&jsonResponse)
+		if err != nil {
+			return nil, err
+		}
+		if checkTokenExpired(jsonResponse.Errcode, *m) {
+			return PostBufferFileWithField(path, name, file, fileName, fields, extends...)
+		}
+		if checkCodeError(jsonResponse.Errcode) {
+			return nil, showError{errorCode: jsonResponse.Errcode, errorMsg: errors.New(jsonResponse.ErrMsg)}
+		}
 	}
-	return result.Bytes(), nil
+	return respByte, nil
 }

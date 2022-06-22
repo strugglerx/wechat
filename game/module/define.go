@@ -25,9 +25,9 @@ type Session struct {
 	ErrMsg     string `json:"errmsg"`
 }
 
-type  Response struct {
-	Errcode    int    `json:"errcode"`
-	ErrMsg     string `json:"errmsg"`
+type Response struct {
+	Errcode int    `json:"errcode"`
+	ErrMsg  string `json:"errmsg"`
 }
 
 type Template struct {

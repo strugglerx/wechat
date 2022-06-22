@@ -1,7 +1,6 @@
 package module
 
 import (
-	"encoding/json"
 	"github.com/strugglerx/wechat/utils"
 )
 
@@ -25,15 +24,7 @@ func (a *PhoneNumber) Init(app utils.App) *PhoneNumber {
 
 //GetPhoneNumber
 //https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/phonenumber/phonenumber.getPhoneNumber.html
-func (a *PhoneNumber) GetPhoneNumber(body []byte) (interface{}, error) {
-	var result interface{}
+func (a *PhoneNumber) GetPhoneNumber(body []byte) (utils.Response, error) {
 	response, err := utils.PostBody("/wxa/business/getuserphonenumber", body, a.App)
-	if err != nil {
-		return result, err
-	}
-	err = json.Unmarshal(response, &result)
-	if err != nil {
-		return result, err
-	}
-	return result, nil
+	return response, err
 }

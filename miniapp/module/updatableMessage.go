@@ -1,8 +1,6 @@
 package module
 
 import (
-	"encoding/json"
-
 	"github.com/strugglerx/wechat/utils"
 )
 
@@ -26,30 +24,14 @@ func (a *UpdatableMessage) Init(app utils.App) *UpdatableMessage {
 
 //CreateActivityId
 //http://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/updatable-message/updatableMessage.createActivityId.html
-func (a *UpdatableMessage) CreateActivityId(body []byte) (interface{}, error) {
-	var result interface{}
+func (a *UpdatableMessage) CreateActivityId(body []byte) (utils.Response, error) {
 	response, err := utils.PostBody("/cgi-bin/message/wxopen/activityid/create", body, a.App)
-	if err != nil {
-		return result, err
-	}
-	err = json.Unmarshal(response, &result)
-	if err != nil {
-		return result, err
-	}
-	return result, nil
+	return response, err
 }
 
 //SetUpdatableMsg
 //http://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/updatable-message/updatableMessage.setUpdatableMsg.html
-func (a *UpdatableMessage) SetUpdatableMsg(body []byte) (interface{}, error) {
-	var result interface{}
+func (a *UpdatableMessage) SetUpdatableMsg(body []byte) (utils.Response, error) {
 	response, err := utils.PostBody("/cgi-bin/message/wxopen/updatablemsg/send", body, a.App)
-	if err != nil {
-		return result, err
-	}
-	err = json.Unmarshal(response, &result)
-	if err != nil {
-		return result, err
-	}
-	return result, nil
+	return response, err
 }

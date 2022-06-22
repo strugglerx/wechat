@@ -4,15 +4,15 @@ import "testing"
 
 func TestGetAccessToken(t *testing.T) {
 	mp := &Mp{
-		Appid:"wxac5621df42a3bc11",
+		Appid:  "wx3a1842be0f96e36e",
 		Secret: "b7c259a57d55dd109a01dc3b578cg316",
 	}
-	t.Logf("%+v",mp.GetAccessToken())
+	t.Logf("%+v", mp.GetAccessToken())
 }
 
 func TestCallbackIp(t *testing.T) {
 	mp := &Mp{
-		Appid:"wxac5621df42a3bc11",
+		Appid:  "wxac5621df42a3bc11",
 		Secret: "b7c259a57d55dd109a01dc3b578cg316",
 	}
 	t.Log(mp.CallbackIp())
@@ -20,7 +20,7 @@ func TestCallbackIp(t *testing.T) {
 
 func TestSetMenu(t *testing.T) {
 	mp := &Mp{
-		Appid:"wxac5621df42a3bc11",
+		Appid:  "wxac5621df42a3bc11",
 		Secret: "b7c259a57d55dd109a01dc3b578cg316",
 	}
 	t.Log(mp.SetMenu([]byte(` {
@@ -49,7 +49,7 @@ func TestSetMenu(t *testing.T) {
 
 func TestShortUrl(t *testing.T) {
 	mp := &Mp{
-		Appid:"wxac5621df42a3bc11",
+		Appid:  "wxac5621df42a3bc11",
 		Secret: "b7c259a57d55dd109a01dc3b578cg316",
 	}
 	t.Log(mp.GetShortUrl("http://www.baidu.com"))
@@ -57,7 +57,7 @@ func TestShortUrl(t *testing.T) {
 
 func TestCreateMoreAcode(t *testing.T) {
 	mp := &Mp{
-		Appid:"wxac5621df42a3bc11",
+		Appid:  "wxac5621df42a3bc11",
 		Secret: "b7c259a57d55dd109a01dc3b578cg316",
 	}
 	t.Log(mp.CreateMoreAcode("QR_STR_SCENE", "helloworld"))
@@ -65,7 +65,7 @@ func TestCreateMoreAcode(t *testing.T) {
 
 func TestGetUserList(t *testing.T) {
 	mp := &Mp{
-		Appid:"wxac5621df42a3bc11",
+		Appid:  "wxac5621df42a3bc11",
 		Secret: "b7c259a57d55dd109a01dc3b578cg316",
 	}
 	t.Log(mp.GetUserList(""))
@@ -73,7 +73,7 @@ func TestGetUserList(t *testing.T) {
 
 func TestGetUserDetail(t *testing.T) {
 	mp := &Mp{
-		Appid:"wxac5621df42a3bc11",
+		Appid:  "wxac5621df42a3bc11",
 		Secret: "b7c259a57d55dd109a01dc3b578cg316",
 	}
 	t.Log(mp.GetUserDetail("o8zsstzrjSvlC9MHI6yfOUMNNi5Q"))
@@ -81,7 +81,7 @@ func TestGetUserDetail(t *testing.T) {
 
 func TestGetUsersDetail(t *testing.T) {
 	mp := &Mp{
-		Appid:"wxac5621df42a3bc11",
+		Appid:  "wxac5621df42a3bc11",
 		Secret: "b7c259a57d55dd109a01dc3b578cg316",
 	}
 	res, _ := mp.GetUsersDetail([]byte(`{
@@ -97,7 +97,7 @@ func TestGetUsersDetail(t *testing.T) {
 
 func TestPushTemplate(t *testing.T) {
 	mp := &Mp{
-		Appid:"wxac5621df42a3bc11",
+		Appid:  "wxac5621df42a3bc11",
 		Secret: "b7c259a57d55dd109a01dc3b578cg316",
 	}
 	mp.init()

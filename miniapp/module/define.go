@@ -14,7 +14,6 @@ type User struct {
 	Openid  string `json:"openid,omitempty"`
 	Appid   string `json:"appid,omitempty"`
 	Unionid string `json:"unionid,omitempty"`
-	Status  bool   `json:"status,omitempty"`
 }
 
 type Session struct {
@@ -25,9 +24,9 @@ type Session struct {
 	ErrMsg     string `json:"errmsg"`
 }
 
-type  Response struct {
-	Errcode    int    `json:"errcode"`
-	ErrMsg     string `json:"errmsg"`
+type Response struct {
+	Errcode int    `json:"errcode"`
+	ErrMsg  string `json:"errmsg"`
 }
 
 type Template struct {
@@ -47,16 +46,6 @@ type Subscribe struct {
 type CheckMedia struct {
 	MediaUrl  string `json:"media_url"`
 	MediaType int    `json:"media_type"`
-}
-
-// line_color	Object	{"r":0,"g":0,"b":0}
-type Acode struct {
-	Scene     string      `json:"scene,omitempty"`
-	Page      string      `json:"page,omitempty"`
-	Width     int         `json:"width,omitempty"`
-	AutoColor bool        `json:"auto_color,omitempty"`
-	LineColor interface{} `json:"line_color,omitempty"`
-	IsHyaline bool        `json:"is_hyaline,omitempty"`
 }
 
 type Text struct {

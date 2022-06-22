@@ -27,22 +27,14 @@ func (a *Login) Init(app utils.App) *Login {
 
 //CheckSessionKey 校验服务器所保存的登录态 session_key 是否合法。为了保持 session_key 私密性，接口不明文传输 session_key，而是通过校验登录态签名完成。
 //https://developers.weixin.qq.com/minigame/dev/api-backend/open-api/login/auth.checkSessionKey.html
-func (a *Login) CheckSessionKey(openid, signature, sigMethod string) (interface{}, error) {
-	var result interface{}
+func (a *Login) CheckSessionKey(openid, signature, sigMethod string) (utils.Response, error) {
 	params := utils.Query{
 		"openid":     openid,
 		"signature":  signature,
 		"sig_method": sigMethod,
 	}
 	response, err := utils.Get("/wxa/checksession", params, a.App)
-	if err != nil {
-		return result, err
-	}
-	err = json.Unmarshal(response, &result)
-	if err != nil {
-		return result, err
-	}
-	return result, nil
+	return response, err
 }
 
 //Code2Session 登录凭证校验。通过 wx.login 接口获得临时登录凭证 code 后传到开发者服务器调用此接口完成登录流程。更多使用方法详见 小程序登录。
