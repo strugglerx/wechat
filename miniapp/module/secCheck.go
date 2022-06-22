@@ -3,7 +3,7 @@ package module
 import (
 	"io"
 
-	"github.com/strugglerx/wechat/utils"
+	"github.com/strugglerx/wechat/v2/utils"
 )
 
 /**

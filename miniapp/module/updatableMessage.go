@@ -1,7 +1,7 @@
 package module
 
 import (
-	"github.com/strugglerx/wechat/utils"
+	"github.com/strugglerx/wechat/v2/utils"
 )
 
 /**

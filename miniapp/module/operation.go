@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/strugglerx/wechat/utils"
+	"github.com/strugglerx/wechat/v2/utils"
 )
 
 /**

@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/strugglerx/wechat/utils"
+	"github.com/strugglerx/wechat/v2/utils"
 	"github.com/tidwall/gjson"
 )
 

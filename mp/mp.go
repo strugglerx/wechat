@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/strugglerx/wechat/utils"
-	"github.com/tidwall/gjson"
 	"io"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/strugglerx/wechat/v2/utils"
+	"github.com/tidwall/gjson"
 )
 
 type Mp struct {

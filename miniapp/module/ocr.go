@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/url"
 
-	"github.com/strugglerx/wechat/utils"
+	"github.com/strugglerx/wechat/v2/utils"
 )
 
 /**

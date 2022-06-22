@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/strugglerx/wechat/utils"
+	"github.com/strugglerx/wechat/v2/utils"
 )
 
 const appid = "wxb6e0730e1f5c8a1f1"

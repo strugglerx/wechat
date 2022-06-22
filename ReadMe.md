@@ -1,8 +1,8 @@
 # Go Wechat
 
-[![Go Doc](https://godoc.org/github.com/strugglerx/wechat?status.svg)](https://godoc.org/github.com/strugglerx/wechat)
-[![Production Ready](https://img.shields.io/badge/production-ready-blue.svg)](https://github.com/strugglerx/wechat)
-[![License](https://img.shields.io/github/license/strugglerx/wechat.svg?style=flat)](https://github.com/strugglerx/wechat)
+[![Go Doc](https://godoc.org/github.com/strugglerx/wechat/v2?status.svg)](https://godoc.org/github.com/strugglerx/wechat/v2)
+[![Production Ready](https://img.shields.io/badge/production-ready-blue.svg)](https://github.com/strugglerx/wechat/v2)
+[![License](https://img.shields.io/github/license/strugglerx/wechat.svg?style=flat)](https://github.com/strugglerx/wechat/v2)
 
 # Installation
 ```

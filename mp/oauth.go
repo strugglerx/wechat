@@ -2,9 +2,10 @@ package mp
 
 import (
 	"errors"
-	"github.com/strugglerx/wechat/utils"
-	"github.com/tidwall/gjson"
 	"time"
+
+	"github.com/strugglerx/wechat/v2/utils"
+	"github.com/tidwall/gjson"
 )
 
 //GetOauthAccessToken 获取Oauth2accessToken(网页版本) //不可以缓存，每个用户的登陆凭证不一样
