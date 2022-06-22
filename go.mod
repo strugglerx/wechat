@@ -1,4 +1,4 @@
-module github.com/strugglerx/wechat
+module github.com/strugglerx/wechat/v2
 
 go 1.16
 
