@@ -6,11 +6,11 @@
 
 # Installation
 ```
-go get -u -v github.com/strugglerx/wechat
+go get -u -v github.com/strugglerx/wechat/v2
 ```
 suggested using `go.mod`:
 ```
-require github.com/strugglerx/wechat
+require github.com/strugglerx/wechat/v2 latest
 ```
 
 # Usage
